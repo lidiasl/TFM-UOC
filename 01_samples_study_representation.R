@@ -61,6 +61,11 @@ table(phenoData_TCGA_gender$sample %in% phenoData_TCGA$sample)
 #TRUE 
 #12591 
 
+### Tissue source site codes
+
+table_tissue_source_site_codes <- fread("~/Desktop/LIDIA/TCGA_classification/Data/tissue_source_site_codes.csv", sep = ",", stringsAsFactors = F)
+
+
 #### Load the gene expression dataset: (unit log2(expected_count+1))
 rnaseq <- fread("~/Desktop/LIDIA/TCGA_classification/Data/tcga_gene_expected_count", sep = "\t", stringsAsFactors = F)
 genenames <- separate(data = rnaseq, col = sample, into = c("GeneName", "version"), remove = T)
@@ -94,8 +99,6 @@ phenoData_TCGA_in_rnaseq_with_gender <- phenoData_TCGA_in_rnaseq[phenoData_TCGA_
 setwd(tablesDirectory)
 write.csv(phenoData_TCGA, file = "phenoData_TCGA.csv")
 write.csv(phenoData_TCGA_in_rnaseq_with_gender, file = "phenoData_TCGA_in_rnaseq_with_gender.csv")
-
-
 
 #####################################################################
 #### GRAPHICS PRE-ANALYSIS
@@ -161,8 +164,7 @@ setwd(resultsDirectory)
 ggsave("Counts by sample type raw data with gender.png", plot = Counts_by_sample_type_raw_data_with_gender, width = 4, height = 2, units = "in")
 
 
-# Table of primary_disease
-table(phenoData_TCGA$primary_disease)
+# Counts by primary disease
 
 phenoData_TCGA$primary_disease <- factor(phenoData_TCGA$primary_disease,
                                          levels = names(sort(table(phenoData_TCGA$primary_disease), decreasing = FALSE)))
@@ -178,12 +180,14 @@ setwd(resultsDirectory)
 ggsave("Counts by primary disease raw data.png", plot = Counts_by_primary_disease_raw_data, width = 8, height = 5, units = "in")
 
 
-# Table of primary_disease in rnaseq
+# Counts by primary_disease in rnaseq with gender
 
 phenoData_TCGA_in_rnaseq_with_gender$primary_disease <- factor(phenoData_TCGA_in_rnaseq_with_gender$primary_disease,
-                                                   levels = names(sort(table(phenoData_TCGA_in_rnaseq_with_gender$primary_disease), decreasing = FALSE)))
+                                                   levels = names(sort(table(phenoData_TCGA_in_rnaseq_with_gender$primary_disease), 
+                                                                       decreasing = FALSE)))
 
-Counts_by_primary_disease_in_rnaseq_with_gender <- ggplot(phenoData_TCGA_in_rnaseq_with_gender, aes(primary_disease)) + geom_bar(color="blue", fill="blue", alpha=0.2) +
+Counts_by_primary_disease_in_rnaseq_with_gender <- ggplot(phenoData_TCGA_in_rnaseq_with_gender, aes(primary_disease)) + 
+  geom_bar(color="blue", fill="blue", alpha=0.2) +
   ggtitle("Counts by primary disease (in rnaseq with gender)") + ylab("Counts") + xlab("Sample type") + theme_minimal() + 
   geom_text(stat='count', aes(label=after_stat(count)), hjust=-0.1, size=2.5) +
   theme(plot.background = element_rect(fill = "white"), 
@@ -191,9 +195,13 @@ Counts_by_primary_disease_in_rnaseq_with_gender <- ggplot(phenoData_TCGA_in_rnas
   scale_y_continuous(expand = c(0.1, 0.5)) + coord_flip()
 
 setwd(resultsDirectory)
-ggsave("Counts by primary disease in rnaseq with gender.png", plot = Counts_by_primary_disease_in_rnaseq_with_gender, width = 8, height = 5, units = "in")
+ggsave("Counts by primary disease in rnaseq with gender.png", plot = Counts_by_primary_disease_in_rnaseq_with_gender, width = 8, 
+       height = 5, units = "in")
 
-#########################################################################
+
+#####################################################################
+#### Separate primary and metastatic
+#####################################################################
 
 phenoData_TCGA.f <- phenoData_TCGA_in_rnaseq_with_gender
 
@@ -210,10 +218,10 @@ table(phenoData_TCGA_primary$sample %in% colnames(rnaseq))
 #9332 
 
 
-#####################################################################
-# Study by primary disease
-#####################################################################
-setwd(tablesDirectory)
+################
+# Add variables
+################
+setwd(dataDirectory)
 set_subset <- read.csv(file = "set_subset.csv", header = TRUE)
 
 phenoData_TCGA_primary$sex <- phenoData_TCGA_gender$gender[match(phenoData_TCGA_primary$sample, phenoData_TCGA_gender$sample)]
@@ -223,6 +231,12 @@ phenoData_TCGA_primary$histological_type <- phenoData_TCGA_gender$histological_t
 phenoData_TCGA_primary$vital_status <- phenoData_TCGA_gender$vital_status[match(phenoData_TCGA_primary$sample, phenoData_TCGA_gender$sample)]
 phenoData_TCGA_primary$age <- phenoData_TCGA_gender$age_at_initial_pathologic_diagnosis[match(phenoData_TCGA_primary$sample, phenoData_TCGA_gender$sample)]
 phenoData_TCGA_primary$primary_disease_set <- set_subset$set[match(phenoData_TCGA_primary$primary_disease, set_subset$subset)]
+phenoData_TCGA_primary$TSS <- sapply(phenoData_TCGA_primary$sample, function(x){
+  str_split(x, "_")[[1]][2]
+})
+phenoData_TCGA_primary$BCR <- table_tissue_source_site_codes$BCR[match(phenoData_TCGA_primary$TSS, table_tissue_source_site_codes$`TSS Code`)]
+phenoData_TCGA_primary$source_site <- table_tissue_source_site_codes$`Source Site`[match(phenoData_TCGA_primary$TSS, table_tissue_source_site_codes$`TSS Code`)]
+
 
 
 
@@ -233,278 +247,278 @@ phenoData_TCGA_metastatic$histological_type <- phenoData_TCGA_gender$histologica
 phenoData_TCGA_metastatic$vital_status <- phenoData_TCGA_gender$vital_status[match(phenoData_TCGA_metastatic$sample, phenoData_TCGA_gender$sample)]
 phenoData_TCGA_metastatic$age <- phenoData_TCGA_gender$age_at_initial_pathologic_diagnosis[match(phenoData_TCGA_metastatic$sample, phenoData_TCGA_gender$sample)]
 phenoData_TCGA_metastatic$primary_disease_set <- set_subset$set[match(phenoData_TCGA_metastatic$primary_disease, set_subset$subset)]
-
+phenoData_TCGA_metastatic$TSS <- sapply(phenoData_TCGA_metastatic$sample, function(x){
+  str_split(x, "_")[[1]][2]
+})
+phenoData_TCGA_metastatic$BCR <- table_tissue_source_site_codes$BCR[match(phenoData_TCGA_metastatic$TSS, table_tissue_source_site_codes$`TSS Code`)]
+phenoData_TCGA_metastatic$source_site <- table_tissue_source_site_codes$`Source Site`[match(phenoData_TCGA_metastatic$TSS, table_tissue_source_site_codes$`TSS Code`)]
 
 
 phenoData_TCGA_primary <- phenoData_TCGA_primary[phenoData_TCGA_primary$race %in% 
-                                                            c("WHITE", "BLACK OR AFRICAN AMERICAN",
-                                                              "ASIAN", "AMERICAN INDIAN OR ALASKA NATIVE"),]
+                                                            c("WHITE", "BLACK OR AFRICAN AMERICAN", "ASIAN"),]
 phenoData_TCGA_metastatic <- phenoData_TCGA_metastatic[phenoData_TCGA_metastatic$race %in% 
-                                                         c("WHITE", "BLACK OR AFRICAN AMERICAN",
-                                                           "ASIAN", "AMERICAN INDIAN OR ALASKA NATIVE"),]
+                                                         c("WHITE", "BLACK OR AFRICAN AMERICAN", "ASIAN"),]
+
+phenoData_TCGA_primary$race <- str_replace_all(phenoData_TCGA_primary$race, " ", "_")
+phenoData_TCGA_metastatic$race <- str_replace_all(phenoData_TCGA_metastatic$race, " ", "_")
 
 
-#####################################################################
-# Group in disease set
-#####################################################################
-
+######################################
+# Write phenoData_TCGA_primary and phenoData_TCGA_metastatic
+######################################
 setwd(tablesDirectory)
+write.csv(phenoData_TCGA_primary, file = "phenoData_TCGA_primary.csv")
+write.csv(phenoData_TCGA_metastatic, file = "phenoData_TCGA_metastatic.csv")
 
+
+#####################################################################
+# Graphs
+#####################################################################
+
+# Counts by primary disease (Primary T)
 phenoData_TCGA_primary$primary_disease_set <- factor(phenoData_TCGA_primary$primary_disease_set,
                                                      levels = names(sort(table(phenoData_TCGA_primary$primary_disease_set), decreasing = FALSE)))
 
 Counts_by_primary_disease_set_PT <- ggplot(phenoData_TCGA_primary, aes(primary_disease_set)) + geom_bar(color="blue", fill="blue", alpha=0.2) + 
-  ggtitle("Counts by primary disease set Primary Tumor") + ylab("Counts") + xlab("Sample type") + theme_minimal() + 
+  ggtitle("Counts by primary disease (set Primary Tumor)") + ylab("Counts") + xlab("Sample type") + theme_minimal() + 
   geom_text(stat='count', aes(label=after_stat(count)), hjust=-0.1, size=2.5) +
   theme(plot.background = element_rect(fill = "white"), 
         panel.background = element_rect(fill = "white"))+
   scale_y_continuous(expand = c(0.1, 0.5)) + coord_flip()
 
 setwd(resultsDirectory)
-ggsave("Counts by primary disease set PT.png", plot = Counts_by_primary_disease_set_PT, width = 8, height = 5, units = "in")
-
-
-# BY RACE
-phenoData_TCGA_primary_split <- split(x = phenoData_TCGA_primary, f = phenoData_TCGA_primary$primary_disease_set)
-
-
-races_list <- c("AMERICAN INDIAN OR ALASKA NATIVE", 
-                "ASIAN", 
-              "BLACK OR AFRICAN AMERICAN", 
-              "WHITE")
-
-length(names(phenoData_TCGA_primary_split))
-# 27
-
-pdf(file = "samples_PT_race.pdf", width = 15, height = 15)
-par(mfrow=c(5,6))
-for (i in 1:length(names(phenoData_TCGA_primary_split))){
-  counts <- table(phenoData_TCGA_primary_split[[i]]$race)
-  counts.df <- as.data.frame(cbind(races_list, rep(0, length(races_list))))
-  for (j in (names(counts))){
-    counts.df$V2[counts.df$races_list==j] <- counts[j]
-  }
-  vector <- as.numeric(counts.df$V2)
-  names(vector) <- counts.df$races_list
-  barplot(vector, 
-          main = names(phenoData_TCGA_primary_split)[i], 
-          ylab = "Nº muestras", 
-          col = c("deepskyblue3", "coral1", "mediumpurple2", "palegreen3"),
-          names.arg = c("AMERICAN INDIAN OR ALASKA NATIVE" = "A.I/A.N", 
-                        "ASIAN" = "Asia", 
-                        "BLACK OR AFRICAN AMERICAN" = "Black", 
-                        "WHITE" = "White"),
-          cex.axis = 1,
-          cex.lab = 1.4,
-          cex.main = 1.5,
-          cex.names =1.2,
-          las = 2)
-}
-
-dev.off()
+ggsave("Counts by primary disease SET PT.png", plot = Counts_by_primary_disease_set_PT, width = 8, height = 5, units = "in")
 
 
 
-#####################################################################
-# Create subset of samples by primary disease set
-#####################################################################
-sort(table(phenoData_TCGA_primary$primary_disease_set))
-# min: cholangiocarcinoma (36)
+# Counts by primary disease (Metastatic T)
+phenoData_TCGA_metastatic$primary_disease_set <- factor(phenoData_TCGA_metastatic$primary_disease_set,
+                                                     levels = names(sort(table(phenoData_TCGA_metastatic$primary_disease_set), decreasing = FALSE)))
 
-n <- 21
-subset_PT <- list()
-
-set.seed(123)
-
-for (i in 1:length(names(phenoData_TCGA_primary_split))){
-  races_split <- split(phenoData_TCGA_primary_split[[i]], phenoData_TCGA_primary_split[[i]]$race)
-  names <- names(table(phenoData_TCGA_primary_split[[i]]$race)[table(phenoData_TCGA_primary_split[[i]]$race)<=5])
-  subset_PT[[i]] <- phenoData_TCGA_primary_split[[i]][phenoData_TCGA_primary_split[[i]]$race %in% names,]
-  races_split <- races_split[!names(races_split) %in% names]
-  while (length(races_split)>1){
-    n_samples <- n - nrow(subset_PT[[i]])
-    n_races <- length(unique(phenoData_TCGA_primary_split[[i]]$race)) - length(names)
-    n_random <- floor(n_samples/n_races)
-    test <- any(lapply(races_split, function(df) nrow(df) < n_random))
-    if (test==TRUE){
-      race_min <- names(which.min(sapply(races_split, nrow)))
-      subset_PT[[i]] <- rbind(subset_PT[[i]], phenoData_TCGA_primary_split[[i]][phenoData_TCGA_primary_split[[i]]$race %in% race_min,])
-      races_split <- races_split[!names(races_split) %in% race_min]
-      names <- c(names, race_min)
-    } else{
-      for (j in 1:length(races_split)){
-        subset_PT[[i]] <- rbind(subset_PT[[i]], add_by_sex(n_random, races_split[[j]]))
-        races_split[[j]] <- races_split[[j]][!races_split[[j]]$sample %in% subset_PT[[i]]$sample,]
-      }
-      if (nrow(subset_PT[[i]]) < n){
-        if(n - nrow(subset_PT[[i]])==1){
-          names_ult <- names(sort(sapply(races_split,nrow), decreasing = TRUE)[1])
-          add <- lapply(races_split[names(races_split) %in% names_ult], function(x){
-            x[sample(seq_len(nrow(x)), size = 1),]
-          })
-          subset_PT[[i]] <- rbind(subset_PT[[i]], Reduce(rbind,add))
-        }else{
-          names_ult <- names(sort(sapply(races_split,nrow), decreasing = TRUE)[1:(n - nrow(subset_PT[[i]]))])
-          add <- lapply(races_split[names(races_split) %in% names_ult], function(x){
-            x[sample(seq_len(nrow(x)), size = 1),]
-          })
-          subset_PT[[i]] <- rbind(subset_PT[[i]], Reduce(rbind,add))
-        }
-      }
-      races_split <- NULL
-    }
-  }
-  if (length(races_split)==1){
-    n_samples <- n - nrow(subset_PT[[i]])
-    subset_PT[[i]] <- rbind(subset_PT[[i]], add_by_sex(n_samples,races_split[[1]]))
-  }
-}
-
-
-
-########### DEF FUNCTION
-add_by_sex <- function(m, races.df) {
-  subset.df <- data.frame()
-  if (length(names(table(races.df$sex)))==1){
-    index <- sample(seq_len(nrow(races.df)), size = m)
-    subset.df  <- races.df[index,]
-  }else{
-    name_max <- names(which.max(table(races.df$sex)))[1]
-    male_df <- races.df[races.df$sex == "MALE",]
-    female_df <- races.df[races.df$sex == "FEMALE",]
-    list_sex <- list(male_df, female_df)
-    names(list_sex) <- c("MALE", "FEMALE")
-    test <- any(lapply(list_sex, function(df) nrow(df) < floor(m/2)))
-    if (test == TRUE){
-      name_min <- names(which.min(sapply(list_sex, nrow)))
-      subset.df <- rbind(subset.df, races.df[races.df$sex %in% name_min,])
-      races.new.df <- races.df[!races.df$sex %in% name_min,]
-      index <- sample(seq_len(nrow(races.new.df)), size = m-nrow(races.df[races.df$sex %in% name_min,]))
-      subset.df <- rbind(subset.df, races.new.df[index,])
-    } else {
-      for (k in 1:length(list_sex)){
-        if (names(list_sex)[k]==name_max){
-          index <- sample(seq_len(nrow(list_sex[[k]])), size = ceiling(m/2))
-          subset.df <- rbind(subset.df, list_sex[[k]][index,])
-        } else{
-          index <- sample(seq_len(nrow(list_sex[[k]])), size = floor(m/2))
-          subset.df <- rbind(subset.df, list_sex[[k]][index,])
-        }
-      }
-    }
-  }
-  return(subset.df)
-}
-
-
-
-#######################################
-names(subset_PT) <- names(phenoData_TCGA_primary_split)
+Counts_by_primary_disease_set_MetT <- ggplot(phenoData_TCGA_metastatic, aes(primary_disease_set)) + geom_bar(color="blue", fill="blue", alpha=0.2) + 
+  ggtitle("Counts by primary disease (set Metastatic Tumor)") + ylab("Counts") + xlab("Sample type") + theme_minimal() + 
+  geom_text(stat='count', aes(label=after_stat(count)), hjust=-0.1, size=2.5) +
+  theme(plot.background = element_rect(fill = "white"), 
+        panel.background = element_rect(fill = "white"))+
+  scale_y_continuous(expand = c(0.1, 0.5)) + coord_flip()
 
 setwd(resultsDirectory)
-pdf(file = "samples_subset_PT_race.pdf", width = 15, height = 15)
-par(mfrow=c(5,6))
-for (i in 1:length(names(subset_PT))){
-  counts <- table(subset_PT[[i]]$race)
-  counts.df <- as.data.frame(cbind(races_list, rep(0, length(races_list))))
-  for (j in (names(counts))){
-    counts.df$V2[counts.df$races_list==j] <- counts[j]
-  }
-  vector <- as.numeric(counts.df$V2)
-  names(vector) <- counts.df$races_list
-  barplot(vector, 
-          main = names(subset_PT)[i], 
-          ylab = "Nº muestras", 
-          col = c("deepskyblue3", "coral1", "mediumpurple2", "palegreen3"),
-          names.arg = c("AMERICAN INDIAN OR ALASKA NATIVE" = "A.I/A.N", 
-                        "ASIAN" = "Asia", 
-                        "BLACK OR AFRICAN AMERICAN" = "Black", 
-                        "WHITE" = "White"),
-          cex.axis = 1,
-          cex.lab = 1.4,
-          cex.main = 1.5,
-          cex.names =1.2,
-          las = 2)
-}
+ggsave("Counts by primary disease SET MetT.png", plot = Counts_by_primary_disease_set_MetT, width = 8, height = 5, units = "in")
 
-dev.off()
-
-
-sex_list <- c("MALE", 
-                "FEMALE")
-
-setwd(resultsDirectory)
-pdf(file = "samples_subset_PT_sex.pdf", width = 15, height = 15)
-par(mfrow=c(5,6))
-for (i in 1:length(names(subset_PT))){
-  counts <- table(subset_PT[[i]]$sex)
-  counts.df <- as.data.frame(cbind(sex_list, rep(0, length(sex_list))))
-  for (j in (names(counts))){
-    counts.df$V2[counts.df$sex_list==j] <- counts[j]
-  }
-  vector <- as.numeric(counts.df$V2)
-  names(vector) <- counts.df$sex_list
-  barplot(vector, 
-          main = names(subset_PT)[i], 
-          ylab = "Nº muestras", 
-          col = c("deepskyblue3", "coral1"),
-          cex.axis = 1,
-          cex.lab = 1.4,
-          cex.main = 1.5,
-          cex.names =1.2,
-          las = 2)
-}
-
-dev.off()
-
-
-train_primary <- Reduce(rbind, subset_PT)
 
 ######################################
-# Write train primary
+# Filter samples with low and high counts
 ######################################
-setwd(tablesDirectory)
-write.csv(train_primary, file = "train_primary.csv")
-
-train_primary <- read.csv(file = "train_primary.csv")
-train_primary <- train_primary[, colnames(train_primary) != "X"]
-#####################################################################
-# RNAseq train primary
-#####################################################################
-
-# Load FPKM for MET500
-FPKM_MET500 <- fread("~/Desktop/LIDIA/TCGA_classification/Data/M.mx.txt", sep = "\t", stringsAsFactors = F)
-genenames_MET500 <- separate(data = FPKM_MET500, col = sample, into = c("GeneName", "version"), remove = T)
-FPKM_MET500 <- FPKM_MET500[,-1]
-FPKM_MET500 <- as.data.frame(FPKM_MET500)
-rownames(FPKM_MET500) <- genenames_MET500$GeneName
-
-# Filter genes common in both datasets:
-table(rownames(rnaseq) %in% rownames(FPKM_MET500))
-#FALSE  TRUE 
-#41435 19063 
-
-rnaseq <- rnaseq[rownames(rnaseq) %in% rownames(FPKM_MET500),]
-
-#Check:
-table(rownames(rnaseq) %in% rownames(FPKM_MET500))
-#TRUE 
-#19063 
-
 
 # The data is in log2(expected_count+1), we have to change it (we want
 # counts without the transformation)
 rnaseq_counts <- round(2^(rnaseq)-1, 0)
 
+rnaseq_counts_primary <- rnaseq_counts[,colnames(rnaseq_counts) %in% phenoData_TCGA_primary$sample]
+rnaseq_counts_primary <- rnaseq_counts_primary[, match(phenoData_TCGA_primary$sample, colnames(rnaseq_counts_primary))]
 
-# Split in training, test dataset and metastatic:
-rnaseq_counts_primary_train <- rnaseq_counts[,colnames(rnaseq_counts) %in% train_primary$sample]
-train_primary <- train_primary[train_primary$sample %in% colnames(rnaseq_counts_primary_train),]
-train_primary <- train_primary[match(colnames(rnaseq_counts_primary_train),train_primary$sample),]
+log_rnaseq_counts_primary <- rnaseq[,colnames(rnaseq) %in% phenoData_TCGA_primary$sample]
+log_rnaseq_counts_primary <- log_rnaseq_counts_primary[, match(phenoData_TCGA_primary$sample, colnames(log_rnaseq_counts_primary))]
 
 
-# Study sex
-phenoData_TCGA_primary_split <- split(x = train_primary, f = train_primary$primary_disease_set)
-lapply(phenoData_TCGA_primary_split, function(x){
-  table(x$sex)
-})
+######################################
+# Write rnaseq and log rnaseq PT
+######################################
+setwd(tablesDirectory)
+write.csv(rnaseq_counts_primary, file = "rnaseq_counts_primary.csv")
+write.csv(log_rnaseq_counts_primary, file = "log_rnaseq_counts_primary.csv")
+
+
+#######################################
+# Identifying outliers by Sum raw counts by col
+#######################################
+
+counts_by_sample <- colSums(rnaseq_counts_primary)
+counts_by_sample.df <- as.data.frame(counts_by_sample)
+
+min(counts_by_sample)
+max(counts_by_sample)
+
+Q1 <- quantile(counts_by_sample, c(0.25)); Q1
+Q3 <- quantile(counts_by_sample, c(0.75)); Q3
+IQR <- Q3-Q1
+
+boxplot(counts_by_sample.df$counts_by_sample)
+
+hist_counts_by_sample_PT <- ggplot(data = counts_by_sample.df, aes(x=counts_by_sample)) + 
+  geom_histogram(fill="black", colour="black", alpha = 0.25, bins = 100) +
+  geom_vline(xintercept = Q1-1.5*IQR, col = "red") +
+  geom_vline(xintercept = Q3+1.5*IQR, col = "red") +
+  ggtitle("Histogram of counts by sample") +
+  xlab("Counts") + ylab("Numer of samples")
+
+setwd(resultsDirectory)
+ggsave("Histogram counts PT.png", plot = hist_counts_by_sample_PT, width = 8, height = 5, units = "in")
+
+
+table(counts_by_sample<(Q1-1.5*IQR)) # 9 outliers
+table(counts_by_sample>(Q3+1.5*IQR)) # 119 outliers
+
+table(rownames(counts_by_sample.df)==phenoData_TCGA_primary$sample)
+counts_by_sample.df$primary_disease_set <- phenoData_TCGA_primary$primary_disease_set
+counts_by_sample.df$TSS <- phenoData_TCGA_primary$TSS
+counts_by_sample.df$BCR <- phenoData_TCGA_primary$BCR
+counts_by_sample.df$source_site <- phenoData_TCGA_primary$source_site
+
+### Boxplot counts by sample by PT
+boxplot_counts_by_sample_by_PT <- ggplot(data = counts_by_sample.df, aes(x=counts_by_sample, y= primary_disease_set)) + 
+  geom_boxplot() 
+
+setwd(resultsDirectory)
+ggsave("Boxplot counts by PT.png", plot = boxplot_counts_by_sample_by_PT, width = 8, height = 5, units = "in")
+
+
+### Boxplot counts by TSS
+
+setwd(resultsDirectory)
+pdf(file = "Boxplot_by_TSS_PT.pdf", width = 15, height = 4)
+print(ggplot(data = counts_by_sample.df, aes(x=counts_by_sample, y= TSS)) + 
+    geom_boxplot()+theme_minimal()+coord_flip())
+dev.off()
+
+setwd(resultsDirectory)
+pdf(file = "Boxplot_by_BCR_PT.pdf", width = 15, height = 4)
+print(ggplot(data = counts_by_sample.df, aes(x=counts_by_sample, y= BCR)) + 
+        geom_boxplot()+theme_minimal()+coord_flip())
+dev.off()
+
+setwd(resultsDirectory)
+pdf(file = "Boxplot_by_source_site_PT.pdf", width = 15, height = 4)
+print(ggplot(data = counts_by_sample.df, aes(x=counts_by_sample, y= source_site)) + 
+        geom_boxplot()+theme_minimal()+
+        theme(plot.background = element_rect(fill = "white"), 
+              panel.background = element_rect(fill = "white"),
+              text = element_text(size = 6, color="black"), 
+              axis.text.x = element_text(size = 4, color="black", angle = 90, vjust = 0.5), 
+              axis.text.y = element_text(size = 3.5, color="black")) + coord_flip())
+dev.off()
+
+
+
+### With log counts
+log_counts_by_sample <- colSums(log_rnaseq_counts_primary)
+log_counts_by_sample.df <- as.data.frame(log_counts_by_sample)
+
+table(rownames(log_counts_by_sample.df)==phenoData_TCGA_primary$sample)
+log_counts_by_sample.df$primary_disease_set <- phenoData_TCGA_primary$primary_disease_set
+log_counts_by_sample.df$TSS <- phenoData_TCGA_primary$TSS
+log_counts_by_sample.df$BCR <- phenoData_TCGA_primary$BCR
+log_counts_by_sample.df$source_site <- phenoData_TCGA_primary$source_site
+
+
+boxplot_log_counts_by_sample_by_PT <- ggplot(data = log_counts_by_sample.df, aes(x=log_counts_by_sample, y= primary_disease_set)) + 
+  geom_boxplot() 
+
+setwd(resultsDirectory)
+ggsave("Boxplot log counts by PT.png", plot = boxplot_log_counts_by_sample_by_PT, width = 8, height = 5, units = "in")
+
+
+
+setwd(resultsDirectory)
+pdf(file = "Boxplot_log_counts_by_TSS_PT.pdf", width = 15, height = 4)
+print(ggplot(data = log_counts_by_sample.df, aes(x=log_counts_by_sample, y= TSS)) + 
+        geom_boxplot()+theme_minimal()+coord_flip())
+dev.off()
+
+setwd(resultsDirectory)
+pdf(file = "Boxplot_log_counts_by_BCR_PT.pdf", width = 15, height = 4)
+print(ggplot(data = log_counts_by_sample.df, aes(x=log_counts_by_sample, y= BCR)) + 
+        geom_boxplot()+theme_minimal()+coord_flip())
+dev.off()
+
+setwd(resultsDirectory)
+pdf(file = "Boxplot_log_counts_by_source_site_PT.pdf", width = 15, height = 4)
+print(ggplot(data = log_counts_by_sample.df, aes(x=log_counts_by_sample, y= source_site)) + 
+        geom_boxplot()+theme_minimal()+
+        theme(plot.background = element_rect(fill = "white"), 
+              panel.background = element_rect(fill = "white"),
+              text = element_text(size = 6, color="black"), 
+              axis.text.x = element_text(size = 4, color="black", angle = 90, vjust = 0.5), 
+              axis.text.y = element_text(size = 3.5, color="black")) + coord_flip())
+dev.off()
+
+samples_down_outliers <- names(counts_by_sample[counts_by_sample<(Q1-1.5*IQR)])
+samples_up_outliers <- names(counts_by_sample[counts_by_sample>(Q3+1.5*IQR)])
+
+######################################
+### Filtering
+######################################
+rnaseq_counts_primary.f <- rnaseq_counts_primary[, !colnames(rnaseq_counts_primary) %in% c(samples_down_outliers,samples_up_outliers)]
+log_rnaseq_counts_primary.f <- log_rnaseq_counts_primary[, !colnames(log_rnaseq_counts_primary) %in% c(samples_down_outliers,samples_up_outliers)]
+phenoData_TCGA_primary.f <- phenoData_TCGA_primary[!phenoData_TCGA_primary$sample %in% c(samples_down_outliers,samples_up_outliers), ]
+
+rnaseq_counts_primary.f <- rnaseq_counts_primary.f[,match(phenoData_TCGA_primary.f$sample, colnames(rnaseq_counts_primary.f))]
+log_rnaseq_counts_primary.f <- log_rnaseq_counts_primary.f[,match(phenoData_TCGA_primary.f$sample, colnames(log_rnaseq_counts_primary.f))]
+
+
+### Boxplot by sample by PT
+counts_by_sample.f <- colSums(rnaseq_counts_primary.f)
+counts_by_sample.f.df <- as.data.frame(counts_by_sample.f)
+
+table(rownames(counts_by_sample.f.df)==phenoData_TCGA_primary.f$sample)
+counts_by_sample.f.df$primary_disease_set <- phenoData_TCGA_primary.f$primary_disease_set
+counts_by_sample.f.df$TSS <- phenoData_TCGA_primary.f$TSS
+counts_by_sample.f.df$BCR <- phenoData_TCGA_primary.f$BCR
+counts_by_sample.f.df$source_site <- phenoData_TCGA_primary.f$source_site
+
+boxplot_counts_by_sample_by_PT.f <- ggplot(data = counts_by_sample.f.df, aes(x=counts_by_sample.f, y= primary_disease_set)) + 
+  geom_boxplot() 
+
+setwd(resultsDirectory)
+ggsave("Boxplot counts by PT filter.png", plot = boxplot_counts_by_sample_by_PT.f, width = 8, height = 5, units = "in")
+
+
+
+setwd(resultsDirectory)
+pdf(file = "Boxplot_by_source_site_PT_filter.pdf", width = 15, height = 4)
+print(ggplot(data = counts_by_sample.f.df, aes(x=counts_by_sample.f, y= source_site)) + 
+        geom_boxplot()+theme_minimal()+
+        theme(plot.background = element_rect(fill = "white"), 
+              panel.background = element_rect(fill = "white"),
+              text = element_text(size = 6, color="black"), 
+              axis.text.x = element_text(size = 4, color="black", angle = 90, vjust = 0.5), 
+              axis.text.y = element_text(size = 3.5, color="black")) + coord_flip())
+dev.off()
+
+
+
+### Boxplot by sample by PT log counts
+log_counts_by_sample.f <- colSums(log_rnaseq_counts_primary.f)
+log_counts_by_sample.f.df <- as.data.frame(log_counts_by_sample.f)
+
+table(rownames(log_counts_by_sample.f.df)==phenoData_TCGA_primary.f$sample)
+log_counts_by_sample.f.df$primary_disease_set <- phenoData_TCGA_primary.f$primary_disease_set
+log_counts_by_sample.f.df$TSS <- phenoData_TCGA_primary.f$TSS
+log_counts_by_sample.f.df$BCR <- phenoData_TCGA_primary.f$BCR
+log_counts_by_sample.f.df$source_site <- phenoData_TCGA_primary.f$source_site
+
+boxplot_log_counts_by_sample_by_PT.f <- ggplot(data = log_counts_by_sample.f.df, aes(x=log_counts_by_sample.f, y= primary_disease_set)) + 
+  geom_boxplot() 
+
+setwd(resultsDirectory)
+ggsave("Boxplot log counts by PT filter.png", plot = boxplot_log_counts_by_sample_by_PT.f, width = 8, height = 5, units = "in")
+
+
+setwd(resultsDirectory)
+pdf(file = "Boxplot_log_counts_by_source_site_PT_filter.pdf", width = 15, height = 4)
+print(ggplot(data = log_counts_by_sample.f.df, aes(x=log_counts_by_sample.f, y= source_site)) + 
+        geom_boxplot()+theme_minimal()+
+        theme(plot.background = element_rect(fill = "white"), 
+              panel.background = element_rect(fill = "white"),
+              text = element_text(size = 6, color="black"), 
+              axis.text.x = element_text(size = 4, color="black", angle = 90, vjust = 0.5), 
+              axis.text.y = element_text(size = 3.5, color="black")) + coord_flip())
+dev.off()
+
+######################################
+# Write phenoData_TCGA_primary filter
+######################################
+setwd(tablesDirectory)
+write.csv(phenoData_TCGA_primary.f, file = "phenoData_TCGA_primary_f.csv")
+write.csv(rnaseq_counts_primary.f, file = "rnaseq_counts_primary_f.csv")
+write.csv(log_rnaseq_counts_primary.f, file = "log_rnaseq_counts_primary_f.csv")
