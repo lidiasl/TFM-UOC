@@ -35,6 +35,8 @@ rnaseq_counts_training.f <- read.csv(file = "rnaseq_counts_training_f.csv")
 # phenoData
 phenoData_training <- read.csv(file = "phenoData_training.csv")
 
+setwd(dataDirectory)
+set_subset <- read.csv(file = "set_subset.csv", header = TRUE)
 ######################################
 
 rownames(phenoData_training) <- phenoData_training$X
@@ -149,17 +151,17 @@ genes_intersect_in_class_plot <- sapply(genes_intersect_in_class, function(x){
 genes_intersect_in_class_plot <- as.data.frame(t(as.data.frame(genes_intersect_in_class_plot)))
 colnames(genes_intersect_in_class_plot) <- "number"
 genes_intersect_in_class_plot$class <- rownames(genes_intersect_in_class_plot)
+genes_intersect_in_class_plot$clase <- set_subset$spanish[match(genes_intersect_in_class_plot$class,set_subset$set)]
 
-
-ggplot(data=genes_intersect_in_class_plot, aes(x=class, y=number)) +
+ggplot(data=genes_intersect_in_class_plot, aes(x=clase, y=number)) +
   geom_bar(stat="identity", fill="steelblue")+
   geom_text(aes(label=number), vjust=-0.3, size=3.5)+
   theme_minimal()+
   theme(plot.background = element_rect(fill = "white"), 
         panel.background = element_rect(fill = "white"),
-        text = element_text(size = 10, color="black"), 
-        axis.text.x = element_text(size = 8, color="black", angle = 90, vjust = 0.5), 
-        axis.text.y = element_text(size = 8, color="black"))+
+        text = element_text(size = 12, color="black"), 
+        axis.text.x = element_text(size = 10, color="black", angle = 90, vjust = 0.5), 
+        axis.text.y = element_text(size = 10, color="black"))+
   ggtitle("Número de genes por clase (padj <0.001 & log2FoldChange > 0)")+
   xlab("Tumor primario") + ylab("Número de genes")
 
@@ -170,15 +172,23 @@ genes_intersect_in_class_plot2 <- sapply(genes_intersect_in_class2, function(x){
 genes_intersect_in_class_plot2 <- as.data.frame(t(as.data.frame(genes_intersect_in_class_plot2)))
 colnames(genes_intersect_in_class_plot2) <- "number"
 genes_intersect_in_class_plot2$class <- rownames(genes_intersect_in_class_plot2)
+genes_intersect_in_class_plot2$clase <- set_subset$spanish[match(genes_intersect_in_class_plot2$class,set_subset$set)]
 
-ggplot(data=genes_intersect_in_class_plot2, aes(x=class, y=number)) +
+ggplot(data=genes_intersect_in_class_plot2, aes(x=clase, y=number)) +
   geom_bar(stat="identity", fill="steelblue")+
   geom_text(aes(label=number), vjust=-0.3, size=3.5)+
   theme_minimal()+
   theme(plot.background = element_rect(fill = "white"), 
         panel.background = element_rect(fill = "white"),
-        text = element_text(size = 10, color="black"), 
-        axis.text.x = element_text(size = 8, color="black", angle = 90, vjust = 0.5), 
-        axis.text.y = element_text(size = 8, color="black"))+
+        text = element_text(size = 12, color="black"), 
+        axis.text.x = element_text(size = 10, color="black", angle = 90, vjust = 0.5), 
+        axis.text.y = element_text(size = 10, color="black"))+
   ggtitle("Número de genes por clase (padj <0.05 & log2FoldChange > 0)")+
   xlab("Tumor primario") + ylab("Número de genes")
+
+######################################
+# Volcano plot de ejemplo
+
+with(genes_list$adrenocortical$brain, plot(log2FoldChange, -log10(pvalue), pch=20, main="Volcano plot", xlim=c(-3,3)))
+with(subset(genes_list$adrenocortical$brain, padj<.001 ), points(log2FoldChange, -log10(pvalue), pch=20, col="blue"))
+with(subset(genes_list$adrenocortical$brain, padj<.001 & log2FoldChange>0), points(log2FoldChange, -log10(pvalue), pch=20, col="red"))

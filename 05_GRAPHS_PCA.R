@@ -118,6 +118,11 @@ PCA_rnaseq_primary_disease <- autoplot(PCA_rnaseq, data = phenoData_training, co
   scale_color_manual(values = colors_blind)+
   labs(colour = "Tumor primario") + theme_light() + theme(legend.position = "none")
 
+PCA_rnaseq_primary_disease_noun <- autoplot(PCA_rnaseq, data = phenoData_training, colour = "enfermedad_primaria",
+                                       main = "Counts", label=TRUE)+
+  scale_color_manual(values = colors_blind)+
+  labs(colour = "Tumor primario") + theme_light() + theme(legend.position = "none")
+# Muestra de vejiga:TCGA_CF_A3MF_01
 
 ############################################################################
 ##################              DATOS CRUDOS             ###################

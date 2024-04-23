@@ -270,6 +270,11 @@ setwd(tablesDirectory)
 write.csv(phenoData_TCGA_primary, file = "phenoData_TCGA_primary.csv")
 write.csv(phenoData_TCGA_metastatic, file = "phenoData_TCGA_metastatic.csv")
 
+setwd(tablesDirectory)
+phenoData_TCGA_primary <- read.csv(file="phenoData_TCGA_primary.csv")
+
+phenoData_TCGA_primary <- phenoData_TCGA_primary[, colnames(phenoData_TCGA_primary)!="X"]
+rownames(phenoData_TCGA_primary) <- phenoData_TCGA_primary$sample
 
 #####################################################################
 # Graphs
@@ -290,6 +295,10 @@ setwd(resultsDirectory)
 ggsave("Counts by primary disease SET PT.png", plot = Counts_by_primary_disease_set_PT, width = 8, height = 5, units = "in")
 
 
+setwd(resultsDirectory)
+pdf(file = "Counts by primary disease SET PT.pdf", width = 10, height = 8)
+print(Counts_by_primary_disease_set_PT)
+dev.off()
 
 # Counts by primary disease (Metastatic T)
 phenoData_TCGA_metastatic$primary_disease_set <- factor(phenoData_TCGA_metastatic$primary_disease_set,
@@ -332,6 +341,11 @@ write.csv(log_rnaseq_counts_primary, file = "log_rnaseq_counts_primary.csv")
 #######################################
 # Identifying outliers by Sum raw counts by col
 #######################################
+setwd(tablesDirectory)
+rnaseq_counts_primary <- read.csv(file = "rnaseq_counts_primary.csv")
+rownames(rnaseq_counts_primary) <- rnaseq_counts_primary$X
+rnaseq_counts_primary <- rnaseq_counts_primary[, colnames(rnaseq_counts_primary)!="X"]
+
 
 counts_by_sample <- colSums(rnaseq_counts_primary)
 counts_by_sample.df <- as.data.frame(counts_by_sample)
@@ -349,11 +363,11 @@ hist_counts_by_sample_PT <- ggplot(data = counts_by_sample.df, aes(x=counts_by_s
   geom_histogram(fill="black", colour="black", alpha = 0.25, bins = 100) +
   geom_vline(xintercept = Q1-1.5*IQR, col = "red") +
   geom_vline(xintercept = Q3+1.5*IQR, col = "red") +
-  ggtitle("Histogram of counts by sample") +
-  xlab("Counts") + ylab("Numer of samples")
+  ggtitle("Histograma suma de counts por muestra") +
+  xlab("Counts totales por muestra") + ylab("Número de muestras")
 
 setwd(resultsDirectory)
-ggsave("Histogram counts PT.png", plot = hist_counts_by_sample_PT, width = 8, height = 5, units = "in")
+ggsave("Histograma counts PT.png", plot = hist_counts_by_sample_PT, width = 8, height = 5, units = "in")
 
 
 table(counts_by_sample<(Q1-1.5*IQR)) # 9 outliers

@@ -170,6 +170,15 @@ vsd.f.pre <- vst(dds.train.f, blind=FALSE)
 counts.vsd.f.pre <- assay(vsd.f.pre)
 counts.vsd.f.pre <- as.data.frame(counts.vsd.f.pre)
 
+pdf(file = "meanSdPlot.pdf", width = 6, height = 4)
+meanSdPlot(assay(vsd))
+dev.off()
+
+pdf(file = "meanSdPlot_f.pdf", width = 6, height = 4)
+meanSdPlot(assay(vsd.f.pre))
+dev.off()
+
+
 dds.train.f <- estimateSizeFactors(dds.train.f)
 counts.norm.f.pre <- counts(dds.train.f, normalized=T)
 counts.norm.f.pre <- as.data.frame(counts.norm.f.pre)
