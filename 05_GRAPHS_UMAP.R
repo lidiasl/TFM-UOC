@@ -22,7 +22,7 @@ library(grid)
 
 
 tablesDirectory <- "~/Desktop/LIDIA/TCGA_classification/TFM/Tables"
-resultsDirectory <- "~/Desktop/LIDIA/TCGA_classification/TFM/Results"
+resultsDirectory <- "~/Desktop/LIDIA/TCGA_classification/TFM/Results/GRAPHS"
 dataDirectory <- "~/Desktop/LIDIA/TCGA_classification/Data"
 
 ######################################
@@ -107,11 +107,13 @@ custom.settings = umap.defaults
 
 table(colnames(rnaseq_counts_training)==phenoData_training$sample)
 
+set.seed(42)
 list_UMAP_rnaseq <- list()
 k<-1
 
 for(i in 1:length(n_neighbors_list)){
   for(j in 1:length(min_dist_list)){
+    print(k)
     custom.settings$n_neighbors = n_neighbors_list[i]
     custom.settings$min_dist=min_dist_list[j]
     
@@ -119,7 +121,7 @@ for(i in 1:length(n_neighbors_list)){
     
     df.umap <- data.frame(x = rnaseq.umap$layout[,1],
                           y = rnaseq.umap$layout[,2],
-                          Group = phenoData_training$primary_disease_set)
+                          Group = phenoData_training$enfermedad_primaria)
     
     list_UMAP_rnaseq[[k]] <- ggplot(df.umap, aes(x, y, colour = Group)) +
       geom_point() + ggtitle("UMAP")
@@ -128,7 +130,7 @@ for(i in 1:length(n_neighbors_list)){
 }
 
 setwd(resultsDirectory)
-pdf(file = "UMAP_rnaseq_optimizing.pdf", width = 80, height = 80)
+pdf(file = "UMAP_rnaseq_optimizacion.pdf", width = 80, height = 80)
 grid.arrange(list_UMAP_rnaseq[[1]],list_UMAP_rnaseq[[2]],list_UMAP_rnaseq[[3]],list_UMAP_rnaseq[[4]],list_UMAP_rnaseq[[5]],
              list_UMAP_rnaseq[[6]],list_UMAP_rnaseq[[7]],list_UMAP_rnaseq[[8]],list_UMAP_rnaseq[[9]], list_UMAP_rnaseq[[10]],
              list_UMAP_rnaseq[[11]],list_UMAP_rnaseq[[12]],list_UMAP_rnaseq[[13]],list_UMAP_rnaseq[[14]],list_UMAP_rnaseq[[15]],
@@ -306,11 +308,12 @@ UMAP_F_log_rnaseq_primary_disease <- ggplot(df.F.umap_log_rnaseq, aes(x, y, colo
 ##################              sin filtrar              ###################
 ############################################################################
 
-
+set.seed(42)
 vsd.umap <- umap(t(counts.vsd), config=custom.settings)
 
 df.umap_vsd <- data.frame(x = vsd.umap$layout[,1], 
                           y = vsd.umap$layout[,2])
+
 
 table(rownames(df.umap_vsd)==phenoData_training$sample)
 
@@ -339,6 +342,92 @@ UMAP_vsd_primary_disease <- ggplot(df.umap_vsd, aes(x, y, colour = enfermedad_pr
   scale_color_manual(values = colors_blind)+
   labs(colour = "Tumor primario") + theme_light() + theme(legend.position = "none")
 
+
+ggplot(df.umap_vsd, aes(x, y, colour = enfermedad_primaria)) +
+  geom_point(size=0.5) + ggtitle("Vsd") +
+  scale_color_manual(values = colors_blind)+
+  labs(colour = "Tumor primario") + theme_light()+stat_ellipse()
+
+# Outliers
+# Calcular centros de masa por grupo
+centers <- df.umap_vsd %>%
+  group_by(enfermedad_primaria) %>%
+  summarise(center1 = mean(x), center2 = mean(y))
+
+df.umap_vsd$center1 <- centers$center1[match(df.umap_vsd$enfermedad_primaria, centers$enfermedad_primaria)]
+df.umap_vsd$center2 <- centers$center2[match(df.umap_vsd$enfermedad_primaria, centers$enfermedad_primaria)]
+
+# Calcular distancias de cada punto a al centro de masa de grupo
+df.umap_vsd$distancia <- sqrt((df.umap_vsd$x - df.umap_vsd$center1)^2 + (df.umap_vsd$y - df.umap_vsd$center2)^2)
+
+
+quantiles <- df.umap_vsd %>%
+  group_by(enfermedad_primaria) %>%
+  mutate(
+    Q3 = quantile(distancia, 0.75),
+    IQR = IQR(distancia),
+    umbral = Q3 + 3.0 * IQR
+  ) 
+
+df.umap_vsd$Q3 <- quantiles$Q3[match(df.umap_vsd$enfermedad_primaria, quantiles$enfermedad_primaria)]
+df.umap_vsd$IQR <- quantiles$IQR[match(df.umap_vsd$enfermedad_primaria, quantiles$enfermedad_primaria)]
+df.umap_vsd$umbral <- quantiles$umbral[match(df.umap_vsd$enfermedad_primaria, quantiles$enfermedad_primaria)]
+
+# Identificar outliers
+df.umap_vsd$outlier = df.umap_vsd$distancia > df.umap_vsd$umbral
+
+df_outliers <- table(df.umap_vsd$outlier, df.umap_vsd$enfermedad_primaria)
+
+setwd(resultsDirectory)
+write.csv(df_outliers, file = "df_outliers.csv")
+
+
+ggplot(df.umap_vsd, aes(x, y, color = outlier)) +
+  geom_point() + scale_color_manual(values = c("black", "red")) +  # No outliers en negro, outliers en rojo
+  theme_minimal() + ggtitle("UMAP vsd OUTLIERS")
+
+
+df.umap_vsd$enfermedad_primaria <- as.factor(df.umap_vsd$enfermedad_primaria)
+
+setwd(resultsDirectory)
+pdf(file = "histogram distances.pdf", width = 10, height = 30)
+ggplot(df.umap_vsd, 
+       aes(distancia)) +
+  geom_histogram()+
+  facet_grid(enfermedad_primaria~., scales = "free", space = "free")
+dev.off()
+
+setwd(resultsDirectory)
+pdf(file = "boxplot distances.pdf", width = 10, height = 30)
+ggplot(df.umap_vsd, 
+       aes(distancia)) +
+  geom_boxplot()+
+  facet_grid(enfermedad_primaria~., scales = "free", space = "free")
+dev.off()
+
+# SAVE df.umap_vsd
+setwd(tablesDirectory)
+write.csv(df.umap_vsd, file ="df_umap_vsd.csv")
+
+# WITHOUT OUTLIERS
+df.umap_vsd <- df.umap_vsd[df.umap_vsd$outlier==FALSE,]
+
+phenoData_training_final <- phenoData_training[phenoData_training$sample %in% rownames(df.umap_vsd),]
+
+rnaseq_counts_training.f_final <- rnaseq_counts_training.f[,colnames(rnaseq_counts_training.f) %in% phenoData_training_final$sample]
+rnaseq_counts_training.f_final <- rnaseq_counts_training.f_final[,match(phenoData_training_final$sample, colnames(rnaseq_counts_training.f_final))]
+
+log_rnaseq_training.f_final <- log_rnaseq_training.f[, colnames(log_rnaseq_training.f) %in% phenoData_training_final$sample]
+log_rnaseq_training.f_final <- log_rnaseq_training.f_final[, match(phenoData_training_final$sample, colnames(log_rnaseq_training.f_final))]
+
+######################################
+# Write select primary
+######################################
+setwd(tablesDirectory)
+write.csv(phenoData_training_final, file = "phenoData_training_final.csv")
+write.csv(rnaseq_counts_training.f_final, file = "rnaseq_counts_training_f_final.csv")
+write.csv(log_rnaseq_training.f_final, file = "log_rnaseq_training_f_final.csv")
+######################################
 
 ############################################################################
 ##################               DATOS VSD               ###################

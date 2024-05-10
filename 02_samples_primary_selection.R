@@ -22,7 +22,7 @@ library(grid)
 
 
 tablesDirectory <- "~/Desktop/LIDIA/TCGA_classification/TFM/Tables"
-resultsDirectory <- "~/Desktop/LIDIA/TCGA_classification/TFM/Results"
+resultsDirectory <- "~/Desktop/LIDIA/TCGA_classification/TFM/Results/Script 02"
 dataDirectory <- "~/Desktop/LIDIA/TCGA_classification/Data"
 
 
@@ -48,15 +48,15 @@ rownames(phenoData_TCGA_primary_f) <- phenoData_TCGA_primary_f$sample
 phenoData_TCGA_in_rnaseq_with_gender <- phenoData_TCGA_in_rnaseq_with_gender[, colnames(phenoData_TCGA_in_rnaseq_with_gender)!="X"]
 rownames(phenoData_TCGA_in_rnaseq_with_gender) <- phenoData_TCGA_in_rnaseq_with_gender$sample
 
+setwd(dataDirectory)
+set_subset <- read.csv(file = "set_subset.csv", header = TRUE)
+
 # Load FPKM for MET500
 FPKM_MET500 <- fread("~/Desktop/LIDIA/TCGA_classification/Data/M.mx.txt", sep = "\t", stringsAsFactors = F)
 genenames_MET500 <- separate(data = FPKM_MET500, col = sample, into = c("GeneName", "version"), remove = T)
 FPKM_MET500 <- FPKM_MET500[,-1]
 FPKM_MET500 <- as.data.frame(FPKM_MET500)
 rownames(FPKM_MET500) <- genenames_MET500$GeneName
-
-
-
 
 # Filter genes common in both datasets:
 table(rownames(rnaseq_counts_primary_f) %in% rownames(FPKM_MET500))
@@ -69,48 +69,6 @@ rnaseq_counts_primary_f <- rnaseq_counts_primary_f[rownames(rnaseq_counts_primar
 table(rownames(rnaseq_counts_primary_f) %in% rownames(FPKM_MET500))
 #TRUE 
 #19063 
-
-
-
-#####################################################################
-# Split by race
-#####################################################################
-phenoData_TCGA_primary_split <- split(x = phenoData_TCGA_primary_f, f = phenoData_TCGA_primary_f$primary_disease_set)
-
-
-races_list <- c("ASIAN", 
-                "BLACK_OR_AFRICAN_AMERICAN", 
-                "WHITE")
-
-length(names(phenoData_TCGA_primary_split))
-# 27
-
-setwd(resultsDirectory)
-pdf(file = "samples_PT_race.pdf", width = 15, height = 15)
-par(mfrow=c(5,6))
-for (i in 1:length(names(phenoData_TCGA_primary_split))){
-  counts <- table(phenoData_TCGA_primary_split[[i]]$race)
-  counts.df <- as.data.frame(cbind(races_list, rep(0, length(races_list))))
-  for (j in (names(counts))){
-    counts.df$V2[counts.df$races_list==j] <- counts[j]
-  }
-  vector <- as.numeric(counts.df$V2)
-  names(vector) <- counts.df$races_list
-  barplot(vector, 
-          main = names(phenoData_TCGA_primary_split)[i], 
-          ylab = "Nº muestras", 
-          col = c("#287D8EFF", "#FDE725FF", "#482677FF"),
-          names.arg = c("ASIAN" = "Asia", 
-                        "BLACK_OR_AFRICAN_AMERICAN" = "Black", 
-                        "WHITE" = "White"),
-          cex.axis = 1,
-          cex.lab = 1.4,
-          cex.main = 1.5,
-          cex.names =1.2,
-          las = 2)
-}
-
-dev.off()
 
 
 #####################################################################
@@ -162,6 +120,8 @@ write.csv(phenoData_breast, file = "phenoData_breast.csv")
 #####################################################################
 # Create subset of samples by primary disease set
 #####################################################################
+phenoData_TCGA_primary_split <- split(x = phenoData_TCGA_primary_f, f = phenoData_TCGA_primary_f$primary_disease_set)
+
 sort(table(phenoData_TCGA_primary_f$primary_disease_set))
 # min: cholangiocarcinoma (36)
 
@@ -250,26 +210,29 @@ add_by_sex <- function(m, races.df) {
   return(subset.df)
 }
 
-
-
 #######################################
 names(subset_PT) <- names(phenoData_TCGA_primary_split)
+
+subset_PT_español <- subset_PT
+names(subset_PT_español) <- set_subset$spanish[match(names(subset_PT_español), set_subset$set)]
 
 ######################################
 # Write subset_PT
 ######################################
 setwd(tablesDirectory)
 saveRDS(subset_PT, file = "subset_PT.rds")
+saveRDS(subset_PT_español, file = "subset_PT_español.rds")
+
 ######################################
-subset_PT <- readRDS(file = "subset_PT.rds")
-######################################
+
+races_list <- c("BLANCO", "NEGRO_O_AFROAMERICANO", "ASIÁTICO")
 
 
 setwd(resultsDirectory)
-pdf(file = "samples_selecPT_race.pdf", width = 15, height = 15)
-par(mfrow=c(5,6))
-for (i in 1:length(names(subset_PT))){
-  counts <- table(subset_PT[[i]]$race)
+pdf(file = "muestras_selecPT_raza.pdf", width = 8, height = 12)
+par(mfrow=c(6,5))
+for (i in 1:length(names(subset_PT_español))){
+  counts <- table(subset_PT_español[[i]]$raza)
   counts.df <- as.data.frame(cbind(races_list, rep(0, length(races_list))))
   for (j in (names(counts))){
     counts.df$V2[counts.df$races_list==j] <- counts[j]
@@ -277,31 +240,31 @@ for (i in 1:length(names(subset_PT))){
   vector <- as.numeric(counts.df$V2)
   names(vector) <- counts.df$races_list
   barplot(vector, 
-          main = names(subset_PT)[i], 
+          main = names(subset_PT_español)[i], 
           ylab = "Nº muestras", 
-          col = c("#287D8EFF", "#FDE725FF", "#482677FF"),
-          names.arg = c("ASIAN" = "Asia", 
-                        "BLACK OR AFRICAN AMERICAN" = "Black", 
-                        "WHITE" = "White"),
+          col = c("#482677FF", "#FDE725FF", "#287D8EFF"),
+          names.arg = c("BLANCO"="BLANCO", 
+                        "NEGRO_O_AFROAMERICANO"="NEGRO", 
+                        "ASIÁTICO"="ASIÁTICO"),
           cex.axis = 1,
-          cex.lab = 1.4,
-          cex.main = 1.5,
-          cex.names =1.2,
+          cex.lab = 1,
+          cex.main = 1,
+          cex.names =0.8,
           las = 2)
 }
 
 dev.off()
 
 
-sex_list <- c("MALE", 
-              "FEMALE")
+sex_list <- c("HOMBRE", 
+              "MUJER")
 
 
 setwd(resultsDirectory)
-pdf(file = "samples_selecPT_sex.pdf", width = 15, height = 15)
+pdf(file = "muestras_selecPT_sexo.pdf", width = 8, height = 12)
 par(mfrow=c(5,6))
-for (i in 1:length(names(subset_PT))){
-  counts <- table(subset_PT[[i]]$sex)
+for (i in 1:length(names(subset_PT_español))){
+  counts <- table(subset_PT_español[[i]]$sexo)
   counts.df <- as.data.frame(cbind(sex_list, rep(0, length(sex_list))))
   for (j in (names(counts))){
     counts.df$V2[counts.df$sex_list==j] <- counts[j]
@@ -309,13 +272,13 @@ for (i in 1:length(names(subset_PT))){
   vector <- as.numeric(counts.df$V2)
   names(vector) <- counts.df$sex_list
   barplot(vector, 
-          main = names(subset_PT)[i], 
+          main = names(subset_PT_español)[i], 
           ylab = "Nº muestras", 
           col = c("deepskyblue3", "coral1"),
           cex.axis = 1,
-          cex.lab = 1.4,
-          cex.main = 1.5,
-          cex.names =1.2,
+          cex.lab = 1,
+          cex.main = 1,
+          cex.names =0.8,
           las = 2)
 }
 
@@ -358,16 +321,6 @@ log_rnaseq_primary_select <- log_rnaseq_primary_select[rownames(log_rnaseq_prima
 setwd(tablesDirectory)
 write.csv(log_rnaseq_primary_select, file = "log_rnaseq_primary_select.csv")
 write.csv(rnaseq_counts_primary_select, file = "rnaseq_counts_primary_select.csv")
-##
-setwd(tablesDirectory)
-rnaseq_counts_primary_select <- read.csv(file = "rnaseq_counts_primary_select.csv")
-log_rnaseq_primary_select <- read.csv(file = "log_rnaseq_primary_select.csv")
-
-rownames(rnaseq_counts_primary_select) <- rnaseq_counts_primary_select$X
-rnaseq_counts_primary_select <- rnaseq_counts_primary_select[, colnames(rnaseq_counts_primary_select)!="X"]
-
-rownames(log_rnaseq_primary_select) <- log_rnaseq_primary_select$X
-log_rnaseq_primary_select <- log_rnaseq_primary_select[, colnames(log_rnaseq_primary_select)!="X"]
 ######################################
 
 

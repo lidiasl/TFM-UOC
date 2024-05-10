@@ -22,7 +22,7 @@ library(grid)
 
 
 tablesDirectory <- "~/Desktop/LIDIA/TCGA_classification/TFM/Tables"
-resultsDirectory <- "~/Desktop/LIDIA/TCGA_classification/TFM/Results"
+resultsDirectory <- "~/Desktop/LIDIA/TCGA_classification/TFM/Results/Script 04"
 dataDirectory <- "~/Desktop/LIDIA/TCGA_classification/Data"
 
 
@@ -30,56 +30,34 @@ dataDirectory <- "~/Desktop/LIDIA/TCGA_classification/Data"
 # Read data
 ######################################
 setwd(tablesDirectory)
-rnaseq_counts_primary_select <- read.csv(file = "rnaseq_counts_primary_select.csv")
-log_rnaseq_primary_select <- read.csv(file = "log_rnaseq_primary_select.csv")
+rnaseq_counts_training <- read.csv(file = "rnaseq_counts_training.csv")
+log_rnaseq_training <- read.csv(file = "log_rnaseq_training.csv")
 phenoData_training <- read.csv(file = "phenoData_training.csv")
-phenoData_test <- read.csv(file = "phenoData_test.csv")
 
 
-rownames(rnaseq_counts_primary_select) <- rnaseq_counts_primary_select$X
-rnaseq_counts_primary_select <- rnaseq_counts_primary_select[, colnames(rnaseq_counts_primary_select)!="X"]
+rownames(rnaseq_counts_training) <- rnaseq_counts_training$X
+rnaseq_counts_training <- rnaseq_counts_training[, colnames(rnaseq_counts_training)!="X"]
 
-rownames(log_rnaseq_primary_select) <- log_rnaseq_primary_select$X
-log_rnaseq_primary_select <- log_rnaseq_primary_select[, colnames(log_rnaseq_primary_select)!="X"]
+rownames(log_rnaseq_training) <- log_rnaseq_training$X
+log_rnaseq_training <- log_rnaseq_training[, colnames(log_rnaseq_training)!="X"]
 
 rownames(phenoData_training) <- phenoData_training$X
 phenoData_training <- phenoData_training[, colnames(phenoData_training)!="X"]
 
-rownames(phenoData_test) <- phenoData_test$X
-phenoData_test <- phenoData_test[, colnames(phenoData_test)!="X"]
 
 #Check
-table(rownames(rnaseq_counts_primary_select)==rownames(log_rnaseq_primary_select))
+table(rownames(rnaseq_counts_training)==rownames(log_rnaseq_training))
 # TRUE 
 #19063 
 
 
-rnaseq_counts_training <- rnaseq_counts_primary_select[,colnames(rnaseq_counts_primary_select) %in% phenoData_training$sample]
-rnaseq_counts_training <- rnaseq_counts_training[,match(phenoData_training$sample, colnames(rnaseq_counts_training))]
-
-rnaseq_counts_test <- rnaseq_counts_primary_select[,colnames(rnaseq_counts_primary_select) %in% phenoData_test$sample]
-rnaseq_counts_test <- rnaseq_counts_test[,match(phenoData_test$sample, colnames(rnaseq_counts_test))]
-
-log_rnaseq_training <- log_rnaseq_primary_select[, colnames(log_rnaseq_primary_select) %in% phenoData_training$sample]
-log_rnaseq_training <- log_rnaseq_training[, match(phenoData_training$sample, colnames(log_rnaseq_training))]
-
-log_rnaseq_test <- log_rnaseq_primary_select[, colnames(log_rnaseq_primary_select) %in% phenoData_test$sample]
-log_rnaseq_test <- log_rnaseq_test[, match(phenoData_test$sample, colnames(log_rnaseq_test))]
-
-######################################
-# Write training and test rnaseq
-######################################
-setwd(tablesDirectory)
-write.csv(rnaseq_counts_training, file = "rnaseq_counts_training.csv")
-write.csv(rnaseq_counts_test, file = "rnaseq_counts_test.csv")
-write.csv(log_rnaseq_training, file = "log_rnaseq_training.csv")
-write.csv(log_rnaseq_test, file = "log_rnaseq_test.csv")
-######################################
 
 table(phenoData_training$sample==colnames(rnaseq_counts_training))
 #TRUE 
 #783 
 
+
+phenoData_training$primary_disease_set <- as.factor(phenoData_training$primary_disease_set)
 # DESeq2
 dds.train <- DESeqDataSetFromMatrix(countData = rnaseq_counts_training, 
                                     colData = phenoData_training, 
@@ -170,15 +148,6 @@ vsd.f.pre <- vst(dds.train.f, blind=FALSE)
 counts.vsd.f.pre <- assay(vsd.f.pre)
 counts.vsd.f.pre <- as.data.frame(counts.vsd.f.pre)
 
-pdf(file = "meanSdPlot.pdf", width = 6, height = 4)
-meanSdPlot(assay(vsd))
-dev.off()
-
-pdf(file = "meanSdPlot_f.pdf", width = 6, height = 4)
-meanSdPlot(assay(vsd.f.pre))
-dev.off()
-
-
 dds.train.f <- estimateSizeFactors(dds.train.f)
 counts.norm.f.pre <- counts(dds.train.f, normalized=T)
 counts.norm.f.pre <- as.data.frame(counts.norm.f.pre)
@@ -206,50 +175,3 @@ table(df_foo$pre==df_foo$after)
 #TRUE 
 #17750 
 
-
-######################################
-setwd(tablesDirectory)
-phenoData_training <- read.csv(file = "phenoData_training.csv")
-phenoData_test <- read.csv(file = "phenoData_test.csv")
-
-setwd(dataDirectory)
-set_subset <- read.csv(file = "set_subset.csv", header = TRUE)
-######################################
-
-rownames(phenoData_training) <- phenoData_training$X
-phenoData_training <- phenoData_training[, colnames(phenoData_training)!="X"]
-
-rownames(phenoData_test) <- phenoData_test$X
-phenoData_test <- phenoData_test[, colnames(phenoData_test)!="X"]
-
-# Poner las enfermedades en español
-
-phenoData_training$enfermedad_primaria <- set_subset$spanish[match(phenoData_training$primary_disease_set, set_subset$set)]
-
-phenoData_test$enfermedad_primaria <- set_subset$spanish[match(phenoData_test$primary_disease_set, set_subset$set)]
-
-#Sexo
-#ifelse(test, yes, no)
-phenoData_training$sexo <- ifelse(phenoData_training$sex=="MALE", "HOMBRE", "MUJER")
-
-phenoData_test$sexo <- ifelse(phenoData_test$sex=="MALE", "HOMBRE", "MUJER")
-
-#Raza
-phenoData_training$raza[phenoData_training$race=="WHITE"] <- "BLANCO"
-phenoData_training$raza[phenoData_training$race=="BLACK_OR_AFRICAN_AMERICAN"] <- "NEGRO"
-phenoData_training$raza[phenoData_training$race=="ASIAN"] <- "ASIÁTICO"
-
-phenoData_test$raza[phenoData_test$race=="WHITE"] <- "BLANCO"
-phenoData_test$raza[phenoData_test$race=="BLACK_OR_AFRICAN_AMERICAN"] <- "NEGRO"
-phenoData_test$raza[phenoData_test$race=="ASIAN"] <- "ASIÁTICO"
-
-#Edad
-phenoData_training$edad <- phenoData_training$age
-
-phenoData_test$edad <- phenoData_test$age
-
-######################################
-setwd(tablesDirectory)
-write.csv(phenoData_training, file = "phenoData_training.csv")
-write.csv(phenoData_test, file = "phenoData_test.csv")
-######################################
