@@ -136,6 +136,9 @@ for(i in 1:length(genes_list)){
 ######################################
 setwd(tablesDirectory)
 saveRDS(genes_list, file="genes_list.rds")
+
+###
+genes_list <- readRDS(file="genes_list.rds")
 ######################################
 
 
@@ -152,35 +155,43 @@ padj_log2FC <- cbind(rep(padj_list,each=6), rep(log2FC_list,4))
 padj_log2FC <- as.data.frame(padj_log2FC)
 colnames(padj_log2FC) <- c("padj", "log2FC")
 
-genes_list_df <- list()
-genes_union_list <- list()
+######################################
+setwd(tablesDirectory)
+write.csv(padj_log2FC, file="padj_log2FC.csv")
+######################################
+
+genes_list_combinations <- list()
+number_genes_list_combinations <- list()
 
 for (j in 1:nrow(padj_log2FC)){
   genes_df <- lapply(genes_list, function(x){
     lapply(x, function(y){
-      rownames(y[y$padj <padj_log2FC$padj[j] & y$log2FoldChange > padj_log2FC$log2FC[j],])
+      rownames(y[y$padj < padj_log2FC$padj[j] & y$log2FoldChange > padj_log2FC$log2FC[j],])
     })
   })
-  genes_list_df[[j]] <- genes_df
+  genes_list_combinations[[j]] <- genes_df
   
-  genes_union <- lapply(genes_df, function(x){
+  genes_number <- lapply(genes_df, function(x){
     lapply(x, function(y){
       length(y)
     })
   })
-  genes_union_list[[j]] <- genes_union
+  number_genes_list_combinations[[j]] <- genes_number
 }
 
+######################################
+setwd(tablesDirectory)
+saveRDS(genes_list_combinations, file="genes_list_all_combinations_padj_log2FC.rds")
+######################################
 
-
-##### Numer of genes
+##### Number of genes
 
 tables_list <- list()
 
 for (i in 1:length(names_primary_disease_set)){
   df <- data.frame()
   for (j in 1:nrow(padj_log2FC)){
-    fila <- unlist(genes_union_list[[j]][[i]])
+    fila <- unlist(number_genes_list_combinations[[j]][[i]])
     df <- rbind(df, fila)
   }
   names <- paste(names_primary_disease_set[i], names_primary_disease_set[-i],sep ="_VS_")
@@ -191,210 +202,42 @@ for (i in 1:length(names_primary_disease_set)){
 names(tables_list) <- names_primary_disease_set
 
 
-##### UPSET
-library(UpSetR)
+
+### Intersect
+for (i in 1:length(names_primary_disease_set)){
+  sum_vector <- c()
+  for (j in 1:nrow(padj_log2FC)){
+    sum_vector[j] <- length(Reduce(intersect, genes_list_df[[j]][[i]]))
+  }
+  tables_list[[i]]$Intersect <- sum_vector
+}
+
+### Intersect >= 24
 
 for (i in 1:length(names_primary_disease_set)){
   sum_vector <- c()
   for (j in 1:nrow(padj_log2FC)){
-    upset <- upset(fromList(genes_list_df[[j]][[i]]), nsets=26)
-    upset$New_data$sum <- rowSums(upset$New_data)
-    sum_vector[j] <-  sum(upset$New_data$sum==26)
+    all <- unlist(genes_list_df[[j]][[i]])
+    table_all <- table(all)
+    sum_vector[j] <- length(names(table_all[table_all>=24]))
   }
-  tables_list[[i]]$intersect <- sum_vector
+  tables_list[[i]]$Intersect_24 <- sum_vector
 }
 
-# 24
-
-tables_list_new <- tables_list
-
+### UNION
 for (i in 1:length(names_primary_disease_set)){
   sum_vector <- c()
   for (j in 1:nrow(padj_log2FC)){
-    upset <- upset(fromList(genes_list_df[[j]][[i]]), nsets=26)
-    upset$New_data$sum <- rowSums(upset$New_data)
-    sum_vector[j] <-  sum(upset$New_data$sum>=24)
+    sum_vector[j] <-  length(Reduce(unique, genes_list_df[[j]][[i]]))
   }
-  tables_list_new[[i]]$intersect <- sum_vector
+  tables_list[[i]]$Union <- sum_vector
 }
 
-#### UNION
-for (i in 1:length(names_primary_disease_set)){
-  sum_vector <- c()
-  for (j in 1:nrow(padj_log2FC)){
-    union_genes <- Reduce(unique, genes_list_df[[j]][[i]])
-    sum_vector[j] <-  length(union_genes)
-  }
-  tables_list[[i]]$union <- sum_vector
-}
-
+######################################
 ##### SAVE TABLES
 setwd(resultsDirectory)
 for (i in 1:length(tables_list)){
   write.csv(tables_list[[i]], file=paste0(names_primary_disease_set[i], "_padj_log2FC.csv"))
 }
-
-
-##### SAVE TABLE INTERSECT
-
-table_intersect <- as.data.frame(tables_list[[1]]$intersect)
-
-for (i in 2:length(tables_list)){
-  table_intersect <- cbind(table_intersect, tables_list[[i]]$intersect)
-}
-
-colnames(table_intersect) <- names_primary_disease_set
-
-table_intersect <- cbind(padj_log2FC,table_intersect)
-
-write.csv(table_intersect, file="table_intersect.csv")
-
-#new
-table_intersect_new <- as.data.frame(tables_list_new[[1]]$intersect)
-
-for (i in 2:length(tables_list_new)){
-  table_intersect_new <- cbind(table_intersect_new, tables_list_new[[i]]$intersect)
-}
-
-colnames(table_intersect_new) <- names_primary_disease_set
-
-table_intersect_new <- cbind(padj_log2FC,table_intersect_new)
-
-write.csv(table_intersect_new, file="table_intersect_new.csv")
-
-
-##### SAVE TABLE UNION
-
-table_union <- as.data.frame(tables_list[[1]]$union)
-
-for (i in 2:length(tables_list)){
-  table_union <- cbind(table_union, tables_list[[i]]$union)
-}
-
-colnames(table_union) <- names_primary_disease_set
-
-table_union <- cbind(padj_log2FC,table_union)
-
-write.csv(table_union, file="table_union.csv")
-
-
-
-
-############################################################################
-# Genes in each comparison
-
-tables_each_gene_list <- list()
-
-for (i in 1:length(names_primary_disease_set)){
-  small_list <- ()
-  for (j in 1:nrow(padj_log2FC)){
-    small_list <- unlist(genes_list_df[[j]][[i]])
-    df <- cbind(df, df$genes %in% columna)
-  }
-  names <- paste(names_primary_disease_set[i], names_primary_disease_set[-i],sep ="_VS_")
-  colnames(df) <- names
-  tables_each_gene_list[[i]] <- cbind(padj_log2FC,df)
-}
-
-names(tables_each_gene_list) <- names_primary_disease_set
-
-
-############################################################################
-
-# Study genes intersect in each class
-# padj <0.001 & log2FoldChange > 0 in each comparison
-genes_list_df <- lapply(genes_list, function(x){
-  lapply(x, function(y){
-    rownames(y[y$padj <0.01 & y$log2FoldChange > 0,])
-  })
-})
-
-# upset plot
-library(UpSetR)
-upset(fromList(genes_list_df$adrenocortical), nsets=26)
-
-genes_list_df2 <- lapply(genes_list, function(x){
-  lapply(x, function(y){
-    rownames(y[y$padj <0.05 & y$log2FoldChange > 0,])
-  })
-})
-
-genes_intersect_in_class <- lapply(genes_list_df, function(x){
-  Reduce(intersect, x)
-})
-
-genes_intersect_in_class2 <- lapply(genes_list_df2, function(x){
-  Reduce(intersect, x)
-})
-
-genes_union_in_class2 <- lapply(genes_list_df2, function(x){
-  Reduce(unique, x)
-})
-
-genes_intersect_in_class_plot <- sapply(genes_intersect_in_class, function(x){
-  list(length(x))
-})
-genes_intersect_in_class_plot <- as.data.frame(t(as.data.frame(genes_intersect_in_class_plot)))
-colnames(genes_intersect_in_class_plot) <- "number"
-genes_intersect_in_class_plot$class <- rownames(genes_intersect_in_class_plot)
-genes_intersect_in_class_plot$clase <- set_subset$spanish[match(genes_intersect_in_class_plot$class,set_subset$set)]
-
-ggplot(data=genes_intersect_in_class_plot, aes(x=clase, y=number)) +
-  geom_bar(stat="identity", fill="steelblue")+
-  geom_text(aes(label=number), vjust=-0.3, size=3.5)+
-  theme_minimal()+
-  theme(plot.background = element_rect(fill = "white"), 
-        panel.background = element_rect(fill = "white"),
-        text = element_text(size = 12, color="black"), 
-        axis.text.x = element_text(size = 10, color="black", angle = 90, vjust = 0.5), 
-        axis.text.y = element_text(size = 10, color="black"))+
-  ggtitle("Número de genes por clase (padj <0.01 & log2FoldChange > 0)")+
-  xlab("Tumor primario") + ylab("Número de genes")
-
-
-genes_intersect_in_class_plot2 <- sapply(genes_intersect_in_class2, function(x){
-  list(length(x))
-})
-genes_intersect_in_class_plot2 <- as.data.frame(t(as.data.frame(genes_intersect_in_class_plot2)))
-colnames(genes_intersect_in_class_plot2) <- "number"
-genes_intersect_in_class_plot2$class <- rownames(genes_intersect_in_class_plot2)
-genes_intersect_in_class_plot2$clase <- set_subset$spanish[match(genes_intersect_in_class_plot2$class,set_subset$set)]
-
-ggplot(data=genes_intersect_in_class_plot2, aes(x=clase, y=number)) +
-  geom_bar(stat="identity", fill="steelblue")+
-  geom_text(aes(label=number), vjust=-0.3, size=3.5)+
-  theme_minimal()+
-  theme(plot.background = element_rect(fill = "white"), 
-        panel.background = element_rect(fill = "white"),
-        text = element_text(size = 12, color="black"), 
-        axis.text.x = element_text(size = 10, color="black", angle = 90, vjust = 0.5), 
-        axis.text.y = element_text(size = 10, color="black"))+
-  ggtitle("Número de genes por clase (padj <0.05 & log2FoldChange > 0)")+
-  xlab("Tumor primario") + ylab("Número de genes")
-
-
-
-genes_union_in_class_plot2 <- sapply(genes_union_in_class2, function(x){
-  list(length(x))
-})
-genes_union_in_class_plot2 <- as.data.frame(t(as.data.frame(genes_union_in_class_plot2)))
-colnames(genes_union_in_class_plot2) <- "number"
-genes_union_in_class_plot2$class <- rownames(genes_union_in_class_plot2)
-genes_union_in_class_plot2$clase <- set_subset$spanish[match(genes_union_in_class_plot2$class,set_subset$set)]
-
-ggplot(data=genes_union_in_class_plot2, aes(x=clase, y=number)) +
-  geom_bar(stat="identity", fill="steelblue")+
-  geom_text(aes(label=number), vjust=-0.3, size=2.5)+
-  theme_minimal()+
-  theme(plot.background = element_rect(fill = "white"), 
-        panel.background = element_rect(fill = "white"),
-        text = element_text(size = 12, color="black"), 
-        axis.text.x = element_text(size = 10, color="black", angle = 90, vjust = 0.5), 
-        axis.text.y = element_text(size = 10, color="black"))+
-  ggtitle("Número de genes por clase (padj <0.05 & log2FoldChange > 0)")+
-  xlab("Tumor primario") + ylab("Número de genes")
-
 ######################################
-setwd(tablesDirectory)
-saveRDS(genes_union_in_class2, file="genes_union_list.rds")
-######################################
+

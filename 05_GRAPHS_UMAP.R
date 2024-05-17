@@ -151,7 +151,7 @@ custom.settings$min_dist=min_dist_list[4]
 rnaseq.umap <- umap(t(rnaseq_counts_training), config=custom.settings)
 
 df.umap_rnaseq <- data.frame(x = rnaseq.umap$layout[,1],
-                      y = rnaseq.umap$layout[,2])
+                             y = rnaseq.umap$layout[,2])
 
 table(rownames(df.umap_rnaseq)==phenoData_training$sample)
 
@@ -173,11 +173,7 @@ UMAP_rnaseq_age <- ggplot(df.umap_rnaseq, aes(x, y, colour = edad)) +
 UMAP_rnaseq_race <- ggplot(df.umap_rnaseq, aes(x, y, colour = raza)) +
   geom_point(size=0.3) + ggtitle("Counts") +
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF")) + theme_light()+
-  labs(colour = "Raza")
-
-# Cargar la paleta de colores turbo
-library(viridisLite)
-colors_blind <- turbo(27, alpha = 1, begin = 0, end = 1, direction = 1)
+  labs(colour = "Raza")+ theme(legend.position = "none")
 
 UMAP_rnaseq_primary_disease <- ggplot(df.umap_rnaseq, aes(x, y, colour = enfermedad_primaria)) +
   geom_point(size=0.3) + ggtitle("Counts") +
@@ -215,7 +211,7 @@ UMAP_F_rnaseq_age <- ggplot(df.F.umap_rnaseq, aes(x, y, colour = edad)) +
 UMAP_F_rnaseq_race <- ggplot(df.F.umap_rnaseq, aes(x, y, colour = raza)) +
   geom_point(size=0.3) + ggtitle("Counts filtrados") +
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+ theme_light()+
-  labs(colour = "Raza")
+  labs(colour = "Raza")+ theme(legend.position = "none")
 
 UMAP_F_rnaseq_primary_disease <- ggplot(df.F.umap_rnaseq, aes(x, y, colour = enfermedad_primaria)) +
   geom_point(size=0.3) + ggtitle("Counts filtrados") +
@@ -254,7 +250,7 @@ UMAP_log_rnaseq_age <- ggplot(df.umap_log_rnaseq, aes(x, y, colour = edad)) +
 UMAP_log_rnaseq_race <- ggplot(df.umap_log_rnaseq, aes(x, y, colour = raza)) +
   geom_point(size=0.3) + ggtitle("Log counts") +
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+ theme_light()+
-  labs(colour = "Raza")
+  labs(colour = "Raza")+ theme(legend.position = "none")
 
 UMAP_log_rnaseq_primary_disease <- ggplot(df.umap_log_rnaseq, aes(x, y, colour = enfermedad_primaria)) +
   geom_point(size=0.3) + ggtitle("Log counts") +
@@ -295,7 +291,7 @@ UMAP_F_log_rnaseq_age <- ggplot(df.F.umap_log_rnaseq, aes(x, y, colour = edad)) 
 UMAP_F_log_rnaseq_race <- ggplot(df.F.umap_log_rnaseq, aes(x, y, colour = raza)) +
   geom_point(size=0.3) + ggtitle("Log counts filtrados") +
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+ theme_light()+
-  labs(colour = "Raza")
+  labs(colour = "Raza")+ theme(legend.position = "none")
 
 UMAP_F_log_rnaseq_primary_disease <- ggplot(df.F.umap_log_rnaseq, aes(x, y, colour = enfermedad_primaria)) +
   geom_point(size=0.3) + ggtitle("Log counts filtrados") +
@@ -308,7 +304,7 @@ UMAP_F_log_rnaseq_primary_disease <- ggplot(df.F.umap_log_rnaseq, aes(x, y, colo
 ##################              sin filtrar              ###################
 ############################################################################
 
-set.seed(42)
+
 vsd.umap <- umap(t(counts.vsd), config=custom.settings)
 
 df.umap_vsd <- data.frame(x = vsd.umap$layout[,1], 
@@ -335,7 +331,7 @@ UMAP_vsd_age <- ggplot(df.umap_vsd, aes(x, y, colour = edad)) +
 UMAP_vsd_race <- ggplot(df.umap_vsd, aes(x, y, colour = raza)) +
   geom_point(size=0.3) + ggtitle("Vsd") +
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+ theme_light()+
-  labs(colour = "Raza")
+  labs(colour = "Raza")+ theme(legend.position = "none")
 
 UMAP_vsd_primary_disease <- ggplot(df.umap_vsd, aes(x, y, colour = enfermedad_primaria)) +
   geom_point(size=0.3) + ggtitle("Vsd") +
@@ -343,6 +339,7 @@ UMAP_vsd_primary_disease <- ggplot(df.umap_vsd, aes(x, y, colour = enfermedad_pr
   labs(colour = "Tumor primario") + theme_light() + theme(legend.position = "none")
 
 
+# UMAP vsd ELIPSE
 ggplot(df.umap_vsd, aes(x, y, colour = enfermedad_primaria)) +
   geom_point(size=0.5) + ggtitle("Vsd") +
   scale_color_manual(values = colors_blind)+
@@ -429,6 +426,25 @@ write.csv(rnaseq_counts_training.f_final, file = "rnaseq_counts_training_f_final
 write.csv(log_rnaseq_training.f_final, file = "log_rnaseq_training_f_final.csv")
 ######################################
 
+
+# UMAP vsd without outliers
+setwd(tablesDirectory)
+counts.vsd <- read.csv(file = "counts_vsd.csv")
+
+rownames(counts.vsd) <- counts.vsd$X
+counts.vsd <- counts.vsd[, colnames(counts.vsd)!="X"]
+counts.vsd <- counts.vsd[, match(phenoData_training_final$sample, colnames(counts.vsd))]
+
+umap_i <- umap(t(counts.vsd), config=custom.settings)
+df.umap <- data.frame(x = umap_i$layout[,1],
+                      y = umap_i$layout[,2],
+                      Group = phenoData_training_final$enfermedad_primaria)
+ggplot(df.umap, aes(x, y, colour = Group)) +
+  geom_point(size=1) + 
+  scale_color_manual(values = colors_blind)+
+  labs(colour = "Tumor primario") + theme_light()
+
+
 ############################################################################
 ##################               DATOS VSD               ###################
 ##################               Filtrados               ###################
@@ -460,7 +476,7 @@ UMAP_F_vsd_age <- ggplot(df.F.umap_vsd, aes(x, y, colour = edad)) +
 UMAP_F_vsd_race <- ggplot(df.F.umap_vsd, aes(x, y, colour = raza)) +
   geom_point(size=0.3) + ggtitle("Vsd filtrados") +
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+ theme_light()+
-  labs(colour = "Raza")
+  labs(colour = "Raza")+ theme(legend.position = "none")
 
 UMAP_F_vsd_primary_disease <- ggplot(df.F.umap_vsd, aes(x, y, colour = enfermedad_primaria)) +
   geom_point(size=0.3) + ggtitle("Vsd filtrados") +
@@ -500,7 +516,7 @@ UMAP_norm_age <- ggplot(df.umap_norm, aes(x, y, colour = edad)) +
 UMAP_norm_race <- ggplot(df.umap_norm, aes(x, y, colour = raza)) +
   geom_point(size=0.3) + ggtitle("Normalizados") +
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+ theme_light()+
-  labs(colour = "Raza")
+  labs(colour = "Raza")+ theme(legend.position = "none")
 
 UMAP_norm_primary_disease <- ggplot(df.umap_norm, aes(x, y, colour = enfermedad_primaria)) +
   geom_point(size=0.3) + ggtitle("Normalizados") +
@@ -540,7 +556,7 @@ UMAP_F_norm_age <- ggplot(df.F.umap_norm, aes(x, y, colour = edad)) +
 UMAP_F_norm_race <- ggplot(df.F.umap_norm, aes(x, y, colour = raza)) +
   geom_point(size=0.3) + ggtitle("Normalizados filtrados") +
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+ theme_light()+
-  labs(colour = "Raza")
+  labs(colour = "Raza")+ theme(legend.position = "none")
 
 UMAP_F_norm_primary_disease <- ggplot(df.F.umap_norm, aes(x, y, colour = enfermedad_primaria)) +
   geom_point(size=0.3) + ggtitle("Normalizados filtrados") +
@@ -579,7 +595,7 @@ UMAP_norm_log_age <- ggplot(df.umap_norm_log, aes(x, y, colour = edad)) +
 UMAP_norm_log_race <- ggplot(df.umap_norm_log, aes(x, y, colour = raza)) +
   geom_point(size=0.3) + ggtitle("Normalizados log") +
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+ theme_light()+
-  labs(colour = "Raza")
+  labs(colour = "Raza")+ theme(legend.position = "none")
 
 UMAP_norm_log_primary_disease <- ggplot(df.umap_norm_log, aes(x, y, colour = enfermedad_primaria)) +
   geom_point(size=0.3) + ggtitle("Normalizados log") +
@@ -618,7 +634,7 @@ UMAP_F_norm_log_age <- ggplot(df.F.umap_norm_log, aes(x, y, colour = edad)) +
 UMAP_F_norm_log_race <- ggplot(df.F.umap_norm_log, aes(x, y, colour = raza)) +
   geom_point(size=0.3) + ggtitle("Normalizados log filtrados") +
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+ theme_light()+
-  labs(colour = "Raza")
+  labs(colour = "Raza")+ theme(legend.position = "none")
 
 UMAP_F_norm_log_primary_disease <- ggplot(df.F.umap_norm_log, aes(x, y, colour = enfermedad_primaria)) +
   geom_point(size=0.3) + ggtitle("Normalizados log filtrados") +
@@ -648,7 +664,7 @@ dev.off()
 
 #Race
 setwd(resultsDirectory)
-pdf(file = "UMAP_comparison_by_race.pdf", width = 8, height = 10)
+pdf(file = "UMAP_comparison_by_race.pdf", width = 6, height = 10)
 grid.arrange(UMAP_rnaseq_race, UMAP_F_rnaseq_race,
              UMAP_log_rnaseq_race, UMAP_F_log_rnaseq_race,
              UMAP_vsd_race, UMAP_F_vsd_race,
@@ -670,7 +686,7 @@ dev.off()
 
 #Primary disease
 setwd(resultsDirectory)
-pdf(file = "UMAP_comparison_by_primary_disease.pdf", width = 8, height = 10)
+pdf(file = "UMAP_comparison_by_primary_disease.pdf", width = 6, height = 10)
 grid.arrange(UMAP_rnaseq_primary_disease, UMAP_F_rnaseq_primary_disease,
              UMAP_log_rnaseq_primary_disease, UMAP_F_log_rnaseq_primary_disease,
              UMAP_vsd_primary_disease, UMAP_F_vsd_primary_disease,

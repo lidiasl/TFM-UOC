@@ -22,7 +22,7 @@ library(grid)
 
 
 tablesDirectory <- "~/Desktop/LIDIA/TCGA_classification/TFM/Tables"
-resultsDirectory <- "~/Desktop/LIDIA/TCGA_classification/TFM/Results"
+resultsDirectory <- "~/Desktop/LIDIA/TCGA_classification/TFM/Results/GRAPHS"
 dataDirectory <- "~/Desktop/LIDIA/TCGA_classification/Data"
 
 ######################################
@@ -42,6 +42,9 @@ counts.norm.f <- read.csv(file = "counts_norm_f_after.csv")
 counts.norm.f.log <- read.csv(file = "counts_norm_f_after_log.csv")
 # phenoData
 phenoData_training <- read.csv(file = "phenoData_training.csv")
+
+setwd(dataDirectory)
+set_subset <- read.csv(file = "set_subset.csv", header = TRUE)
 ######################################
 
 
@@ -80,17 +83,16 @@ counts.norm.f.log <- counts.norm.f.log[, colnames(counts.norm.f.log)!="X"]
 
 ######################################
 
-
 # Cargar la paleta de colores turbo
 library(viridisLite)
 colors_blind <- turbo(27, alpha = 1, begin = 0, end = 1, direction = 1)
-
 
 ############################################################################
 ##################              DATOS CRUDOS             ###################
 ##################              sin filtrar              ###################
 ############################################################################
 
+set.seed(42)
 
 PCA_rnaseq <- prcomp(t(as.matrix(rnaseq_counts_training)), 
                                       scale. = FALSE, 
@@ -106,7 +108,7 @@ PCA_rnaseq_sex <- autoplot(PCA_rnaseq, data = phenoData_training, colour = "sexo
 PCA_rnaseq_race <- autoplot(PCA_rnaseq, data = phenoData_training, colour = "raza",
                            main = "Counts", size=0.4)+
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+
-  labs(colour = "Raza") + theme_light()
+  labs(colour = "Raza") + theme_light() + theme(legend.position = "none")
 
 
 PCA_rnaseq_age <- autoplot(PCA_rnaseq, data = phenoData_training, colour = "edad",
@@ -126,7 +128,7 @@ PCA_rnaseq_primary_disease_noun <- autoplot(PCA_rnaseq, data = phenoData_trainin
 
 ############################################################################
 ##################              DATOS CRUDOS             ###################
-##################              Filtrados              ###################
+##################              Filtrados              #####################
 ############################################################################
 
 
@@ -144,7 +146,7 @@ PCA_F_rnaseq_sex <- autoplot(PCA_F_rnaseq, data = phenoData_training, colour = "
 PCA_F_rnaseq_race <- autoplot(PCA_F_rnaseq, data = phenoData_training, colour = "raza",
                             main = "Counts filtrados", size=0.4)+
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+
-  labs(colour = "Raza") + theme_light()
+  labs(colour = "Raza") + theme_light()+ theme(legend.position = "none")
 
 
 PCA_F_rnaseq_age <- autoplot(PCA_F_rnaseq, data = phenoData_training, colour = "edad",
@@ -176,7 +178,7 @@ PCA_log_rnaseq_sex <- autoplot(PCA_log_rnaseq, data = phenoData_training, colour
 PCA_log_rnaseq_race <- autoplot(PCA_log_rnaseq, data = phenoData_training, colour = "raza",
                             main = "Log counts", size=0.4)+
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+
-  labs(colour = "Raza") + theme_light()
+  labs(colour = "Raza") + theme_light()+ theme(legend.position = "none")
 
 
 PCA_log_rnaseq_age <- autoplot(PCA_log_rnaseq, data = phenoData_training, colour = "edad",
@@ -209,7 +211,7 @@ PCA_F_log_rnaseq_sex <- autoplot(PCA_F_log_rnaseq, data = phenoData_training, co
 PCA_F_log_rnaseq_race <- autoplot(PCA_F_log_rnaseq, data = phenoData_training, colour = "raza",
                                 main = "Log counts filtrados", size=0.4)+
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+
-  labs(colour = "Raza") + theme_light()
+  labs(colour = "Raza") + theme_light()+ theme(legend.position = "none")
 
 
 PCA_F_log_rnaseq_age <- autoplot(PCA_F_log_rnaseq, data = phenoData_training, colour = "edad",
@@ -242,7 +244,7 @@ PCA_vsd_sex <- autoplot(PCA_vsd, data = phenoData_training, colour = "sexo",
 PCA_vsd_race <- autoplot(PCA_vsd, data = phenoData_training, colour = "raza",
                                 main = "Vsd", size=0.4)+
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+
-  labs(colour = "Raza") + theme_light()
+  labs(colour = "Raza") + theme_light()+ theme(legend.position = "none")
 
 
 PCA_vsd_age <- autoplot(PCA_vsd, data = phenoData_training, colour = "edad",
@@ -276,7 +278,7 @@ PCA_F_vsd_sex <- autoplot(PCA_F_vsd, data = phenoData_training, colour = "sexo",
 PCA_F_vsd_race <- autoplot(PCA_F_vsd, data = phenoData_training, colour = "raza",
                          main = "Vsd filtrados", size=0.4)+
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+
-  labs(colour = "Raza") + theme_light()
+  labs(colour = "Raza") + theme_light()+ theme(legend.position = "none")
 
 
 PCA_F_vsd_age <- autoplot(PCA_F_vsd, data = phenoData_training, colour = "edad",
@@ -310,7 +312,7 @@ PCA_norm_sex <- autoplot(PCA_norm, data = phenoData_training, colour = "sexo",
 PCA_norm_race <- autoplot(PCA_norm, data = phenoData_training, colour = "raza",
                          main = "Normalizados", size=0.4)+
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+
-  labs(colour = "Raza") + theme_light()
+  labs(colour = "Raza") + theme_light()+ theme(legend.position = "none")
 
 
 PCA_norm_age <- autoplot(PCA_norm, data = phenoData_training, colour = "edad",
@@ -344,7 +346,7 @@ PCA_F_norm_sex <- autoplot(PCA_F_norm, data = phenoData_training, colour = "sexo
 PCA_F_norm_race <- autoplot(PCA_F_norm, data = phenoData_training, colour = "raza",
                           main = "Normalizados filtrados", size=0.4)+
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+
-  labs(colour = "Raza") + theme_light()
+  labs(colour = "Raza") + theme_light()+ theme(legend.position = "none")
 
 
 PCA_F_norm_age <- autoplot(PCA_F_norm, data = phenoData_training, colour = "edad",
@@ -378,7 +380,7 @@ PCA_norm_log_sex <- autoplot(PCA_norm_log, data = phenoData_training, colour = "
 PCA_norm_log_race <- autoplot(PCA_norm_log, data = phenoData_training, colour = "raza",
                           main = "Normalizados log", size=0.4)+
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+
-  labs(colour = "Raza") + theme_light()
+  labs(colour = "Raza") + theme_light()+ theme(legend.position = "none")
 
 
 PCA_norm_log_age <- autoplot(PCA_norm_log, data = phenoData_training, colour = "edad",
@@ -413,7 +415,7 @@ PCA_F_norm_log_sex <- autoplot(PCA_F_norm_log, data = phenoData_training, colour
 PCA_F_norm_log_race <- autoplot(PCA_F_norm_log, data = phenoData_training, colour = "raza",
                               main = "Normalizados log filtrados", size=0.4)+
   scale_color_manual(values = c("#287D8EFF", "#482677FF", "#FDE725FF"))+
-  labs(colour = "Raza") + theme_light()
+  labs(colour = "Raza") + theme_light()+ theme(legend.position = "none")
 
 
 PCA_F_norm_log_age <- autoplot(PCA_F_norm_log, data = phenoData_training, colour = "edad",
@@ -449,7 +451,7 @@ dev.off()
 
 #Race
 setwd(resultsDirectory)
-pdf(file = "PCA_comparison_by_race.pdf", width = 8, height = 10)
+pdf(file = "PCA_comparison_by_race.pdf", width = 6, height = 10)
 grid.arrange(PCA_rnaseq_race, PCA_F_rnaseq_race,
              PCA_log_rnaseq_race, PCA_F_log_rnaseq_race,
              PCA_vsd_race, PCA_F_vsd_race,
@@ -471,7 +473,7 @@ dev.off()
 
 #Primary disease
 setwd(resultsDirectory)
-pdf(file = "PCA_comparison_by_primary_disease.pdf", width = 8, height = 10)
+pdf(file = "PCA_comparison_by_primary_disease.pdf", width = 6, height = 10)
 grid.arrange(PCA_rnaseq_primary_disease, PCA_F_rnaseq_primary_disease,
              PCA_log_rnaseq_primary_disease, PCA_F_log_rnaseq_primary_disease,
              PCA_vsd_primary_disease, PCA_F_vsd_primary_disease,
@@ -480,11 +482,3 @@ grid.arrange(PCA_rnaseq_primary_disease, PCA_F_rnaseq_primary_disease,
              ncol=2)
 dev.off()
 
-
-setwd(resultsDirectory)
-pdf(file = "foo_legend.pdf", width = 8, height = 10)
-autoplot(PCA_F_norm_log, data = phenoData_training, colour = "enfermedad_primaria",
-         main = "Normalizados log filtrados", size=0.5)+
-  scale_color_manual(values = colors_blind)+
-  labs(colour = "Tumor primario") + theme_light()
-dev.off()
