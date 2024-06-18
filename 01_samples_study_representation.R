@@ -287,6 +287,13 @@ write.csv(phenoData_TCGA_metastatic, file = "phenoData_TCGA_metastatic.csv")
 # Graphs
 #####################################################################
 
+library(lessR)
+setwd(resultsDirectory)
+phenoData_TCGA_primary_graph <- phenoData_TCGA_primary[phenoData_TCGA_primary$raza %in% races_list,]
+pdf(file="PieChart_razas.pdf", width=8, height = 8)
+PieChart(raza, hole = 0, data = phenoData_TCGA_primary_graph,
+         fill = c("#287D8EFF", "#482677FF", "#808080", "#FF0000","#FDE725FF"), main = "")
+dev.off()
 # Counts by primary disease (Primary T)
 phenoData_TCGA_primary$enfermedad_primaria <- factor(phenoData_TCGA_primary$enfermedad_primaria,
                                                      levels = names(sort(table(phenoData_TCGA_primary$enfermedad_primaria), decreasing = FALSE)))

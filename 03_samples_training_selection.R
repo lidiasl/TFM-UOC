@@ -1,5 +1,5 @@
 #####################################################################
-# Samples study Primary Tumor and selection of samples
+# Samples Training and Validation selection
 # Lidia Sainz
 #####################################################################
 

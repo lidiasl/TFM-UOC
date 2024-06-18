@@ -148,10 +148,10 @@ genes_list <- readRDS(file="genes_list.rds")
 
 # Take the union of 26 comparisons for each primary tumor
 
-padj_list <- c(0.001, 0.005, 0.01, 0.05)
+padj_list <- c(0.0001,0.001, 0.005, 0.01, 0.05)
 log2FC_list <- c(0,1,2,3,4,5)
 
-padj_log2FC <- cbind(rep(padj_list,each=6), rep(log2FC_list,4))
+padj_log2FC <- cbind(rep(padj_list,each=6), rep(log2FC_list,5))
 padj_log2FC <- as.data.frame(padj_log2FC)
 colnames(padj_log2FC) <- c("padj", "log2FC")
 
@@ -207,7 +207,7 @@ names(tables_list) <- names_primary_disease_set
 for (i in 1:length(names_primary_disease_set)){
   sum_vector <- c()
   for (j in 1:nrow(padj_log2FC)){
-    sum_vector[j] <- length(Reduce(intersect, genes_list_df[[j]][[i]]))
+    sum_vector[j] <- length(Reduce(intersect, genes_list_combinations[[j]][[i]]))
   }
   tables_list[[i]]$Intersect <- sum_vector
 }
@@ -217,7 +217,7 @@ for (i in 1:length(names_primary_disease_set)){
 for (i in 1:length(names_primary_disease_set)){
   sum_vector <- c()
   for (j in 1:nrow(padj_log2FC)){
-    all <- unlist(genes_list_df[[j]][[i]])
+    all <- unlist(genes_list_combinations[[j]][[i]])
     table_all <- table(all)
     sum_vector[j] <- length(names(table_all[table_all>=24]))
   }
@@ -228,7 +228,7 @@ for (i in 1:length(names_primary_disease_set)){
 for (i in 1:length(names_primary_disease_set)){
   sum_vector <- c()
   for (j in 1:nrow(padj_log2FC)){
-    sum_vector[j] <-  length(Reduce(unique, genes_list_df[[j]][[i]]))
+    sum_vector[j] <-  length(Reduce(union, genes_list_combinations[[j]][[i]]))
   }
   tables_list[[i]]$Union <- sum_vector
 }
@@ -241,3 +241,70 @@ for (i in 1:length(tables_list)){
 }
 ######################################
 
+
+######################################
+### Save genes for padj < 0.0001 & log2FoldChange > 5
+######################################
+
+
+genes_list_0.0001_5 <- lapply(genes_list, function(x){
+  lapply(x, function(y){
+    rownames(y[y$padj < 0.0001 & y$log2FoldChange > 5,])
+  })
+})
+
+
+setwd(tablesDirectory)
+saveRDS(genes_list_0.0001_5, file="genes_list_0.0001_5.rds")
+
+
+genes_list_0.0001_5 <- lapply(genes_list_0.0001_5, function(x){
+  Reduce(c,x)
+})
+####################
+genes_list_0.0001_5_by_PT <- lapply(genes_list_0.0001_5, function(x){
+  unique(x)
+})
+
+genes_list_0.0001_5_by_PT <- lapply(genes_list_0.0001_5_by_PT, function(x){
+  length(x)
+})
+
+genes_list_0.0001_5_by_PT <- as.data.frame(genes_list_0.0001_5_by_PT)
+genes_list_0.0001_5_by_PT <- as.data.frame(t(genes_list_0.0001_5_by_PT))
+colnames(genes_list_0.0001_5_by_PT) <- "numero"
+genes_list_0.0001_5_by_PT$enfermedad_primaria <- set_subset$spanish[match(rownames(genes_list_0.0001_5_by_PT), set_subset$set)]
+
+num_genes_PT <- ggplot(genes_list_0.0001_5_by_PT, aes(x = enfermedad_primaria, y = numero)) +
+  geom_bar(stat = "identity", fill = "blue", alpha=0.5) +
+  geom_text(aes(label = numero),angle = 90, vjust = 0.5, hjust=0.5) +
+  labs(title = "Número de genes expresados diferencialmente (padj<0.0001 & log2FC>5)",
+       x = "Tumor primario",
+       y = "Número de genes (padj<0.0001 & log2FC>5)") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 12),
+    axis.text.y = element_text(size = 10), 
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14), 
+    plot.title = element_text(size = 16) 
+  )
+setwd(resultsDirectory)
+pdf(file = "num_genes_by_PT.pdf", width = 10, height = 6)
+print(num_genes_PT)
+dev.off()
+ggsave(file = "num_genes_by_PT.png", num_genes_PT, width = 10, height = 6)
+####################
+genes_list_0.0001_5 <- Reduce(c,genes_list_0.0001_5) 
+genes_list_0.0001_5 <- unique(genes_list_0.0001_5) #7339
+length(genes_list_0.0001_5) #7339
+
+
+genes_list_0.001_3 <- lapply(genes_list, function(x){
+  lapply(x, function(y){
+    rownames(y[y$padj < 0.001 & y$log2FoldChange > 3,])
+  })
+})
+
+setwd(tablesDirectory)
+saveRDS(genes_list_0.001_3, file="genes_list_0.001_3.rds")
