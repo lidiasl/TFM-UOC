@@ -81,8 +81,8 @@ set.seed(42)
 toc <- Sys.time()
 model_KNN <- caret::train(enfermedad_primaria ~ .,
                           data = zscore_variable_log_fpkm.var,
-                          method = "knn", # this will use the svmRadial function
-                          metric = "Accuracy", # which metric should be optimized for classification
+                          method = "knn", 
+                          metric = "Accuracy",
                           tuneGrid = tunegrid,
                           trControl = control)
 
@@ -120,7 +120,7 @@ NPV_train <- mean(tab_cm$byClass[,4])
 
 
 ######################################
-########## PROBAR KNN SOBRE VALIDATION
+########## KNN VALIDATION
 ######################################
 
 setwd(tablesDirectory)

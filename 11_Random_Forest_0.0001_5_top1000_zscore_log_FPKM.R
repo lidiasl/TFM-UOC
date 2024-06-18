@@ -105,9 +105,8 @@ toc <- Sys.time()
 for (i in 1:length(ntree_list)){
   model_rf <- caret::train(enfermedad_primaria ~ .,
                            data = zscore_log_fpkm.var,
-                           method = "rf", # this will use the randomForest::randomForest function
-                           metric = "Accuracy", # which metric should be optimized for classification
-                           # options to be passed to randomForest
+                           method = "rf", 
+                           metric = "Accuracy", 
                            tuneGrid = tunegrid,
                            trControl = control,
                            ntree = ntree_list[i],
@@ -164,7 +163,7 @@ precision_train <- mean(tab_cm$byClass[,5])
 NPV_train <- mean(tab_cm$byClass[,4])
 
 ######################################
-########## PROBAR RF SOBRE VALIDATION
+########## RF VALIDATION
 ######################################
 
 setwd(tablesDirectory)
@@ -315,14 +314,14 @@ library(fmsb)
 par(mar=c(0,0,0,0))
 radarchart(df_adrenocortical, 
            axistype = 1,
-           pcol = c("red", "blue", "green"),   # Colores para los dos conjuntos
-           plwd = 2,                 # Ancho de línea
-           cglcol = "grey",          # Color de las líneas de la cuadrícula
-           cglty = 1,                # Tipo de línea de la cuadrícula
-           axislabcol = "grey",      # Color de las etiquetas de los ejes
-           caxislabels = c(0.00, 0.25, 0.50, 0.75,1.00), # Etiquetas de los ejes
-           vlcex = 1.2,               # Tamaño de las etiquetas de las variables
-           cex.main = 1.5,            # Tamaño del título principal
+           pcol = c("red", "blue", "green"),   
+           plwd = 2,                
+           cglcol = "grey",         
+           cglty = 1,             
+           axislabcol = "grey",   
+           caxislabels = c(0.00, 0.25, 0.50, 0.75,1.00), 
+           vlcex = 1.2,         
+           cex.main = 1.5,       
            cex.lab = 1.2)     
 legend(x = 1, y = 1, legend = c("Entrenamiento","Test", "MET500"), 
        col = c("red", "blue", "green"), lty = 1, lwd = 2)
@@ -344,14 +343,14 @@ for (i in 1:length(tejidos_MET500)){
   pdf(file=paste("radar plots RF", tejidos_MET500[i],".pdf" ), width=8)
   radarchart(df, 
              axistype = 1,
-             pcol = c("#984EA3", "#FFD92F", "#E41A1C"),   # Colores para los dos conjuntos
-             plwd = 5,                 # Ancho de línea
-             cglcol = "grey",          # Color de las líneas de la cuadrícula
-             cglty = 1,                # Tipo de línea de la cuadrícula
-             axislabcol = "grey",      # Color de las etiquetas de los ejes
-             caxislabels = c(0.00, 0.25, 0.50, 0.75,1.00), # Etiquetas de los ejes
-             vlcex =1.5,               # Tamaño de las etiquetas de las variables
-             cex.main = 1.5,            # Tamaño del título principal
+             pcol = c("#984EA3", "#FFD92F", "#E41A1C"),   
+             plwd = 5,              
+             cglcol = "grey",        
+             cglty = 1,           
+             axislabcol = "grey",  
+             caxislabels = c(0.00, 0.25, 0.50, 0.75,1.00),
+             vlcex =1.5,              
+             cex.main = 1.5,           
              cex.lab = 1.2,
              cex=4)
   title(main = sub("Class:", "", tejidos_MET500[i]), cex.main = 2)
@@ -360,14 +359,14 @@ for (i in 1:length(tejidos_MET500)){
 
 radarchart(df, 
            axistype = 1,
-           pcol = c("#984EA3", "#FFD92F", "#E41A1C"),   # Colores para los dos conjuntos
-           plwd = 5,                 # Ancho de línea
-           cglcol = "grey",          # Color de las líneas de la cuadrícula
-           cglty = 1,                # Tipo de línea de la cuadrícula
-           axislabcol = "grey",      # Color de las etiquetas de los ejes
-           caxislabels = c(0.00, 0.25, 0.50, 0.75,1.00), # Etiquetas de los ejes
-           vlcex =1.5,               # Tamaño de las etiquetas de las variables
-           cex.main = 1.5,            # Tamaño del título principal
+           pcol = c("#984EA3", "#FFD92F", "#E41A1C"),  
+           plwd = 5,                 
+           cglcol = "grey",         
+           cglty = 1,                
+           axislabcol = "grey",    
+           caxislabels = c(0.00, 0.25, 0.50, 0.75,1.00), 
+           vlcex =1.5,             
+           cex.main = 1.5,           
            cex.lab = 1.2,
            cex=4)
 title(main = sub("Class:", "", tejidos_MET500[i]), cex.main = 2)

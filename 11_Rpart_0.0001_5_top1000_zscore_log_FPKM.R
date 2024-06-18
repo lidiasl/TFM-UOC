@@ -84,9 +84,8 @@ toc <- Sys.time()
 for (i in 1:length(maxdepth_list)){
   model_rf <- caret::train(enfermedad_primaria ~ .,
                            data = zscore_log_fpkm.var,
-                           method = "rpart", # this will use the randomForest::randomForest function
-                           metric = "Accuracy", # which metric should be optimized for classification
-                           # options to be passed to randomForest
+                           method = "rpart", 
+                           metric = "Accuracy", 
                            tuneGrid = tunegrid,
                            trControl = control,
                            maxdepth = maxdepth_list[i])
@@ -143,7 +142,7 @@ NPV_train <- mean(tab_cm$byClass[,4])
 
 
 ######################################
-########## PROBAR RPART SOBRE VALIDATION
+########## RPART VALIDATION
 ######################################
 
 setwd(tablesDirectory)

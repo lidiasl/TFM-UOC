@@ -82,8 +82,8 @@ set.seed(42)
 toc <- Sys.time()
 model_SVM <- caret::train(enfermedad_primaria ~ .,
                                  data = zscore_log_fpkm.var,
-                                 method = "svmRadial", # this will use the svmRadial function
-                                 metric = "Accuracy", # which metric should be optimized for classification
+                                 method = "svmRadial", 
+                                 metric = "Accuracy",
                                  tuneGrid = tunegrid,
                                  trControl = control)
 
@@ -131,7 +131,7 @@ NPV_train <- mean(tab_cm$byClass[,4])
 
 
 ######################################
-########## PROBAR SVM SOBRE VALIDATION
+########## SVM VALIDATION
 ######################################
 
 setwd(tablesDirectory)

@@ -1,5 +1,5 @@
 #####################################################################
-# Genes of pvalue adj < 0.0001 & log2FC>3 & top 1000 in Decision tree
+# Genes of pvalue adj < 0.0001 & log2FC>3 & top 1000 in Naive Bayes
 # zscore_log_FPKM
 # Lidia Sainz
 #####################################################################
@@ -83,9 +83,8 @@ set.seed(42)
 toc <- Sys.time()
 model_NaiveBayes <- caret::train(enfermedad_primaria ~ .,
                            data = zscore_log_fpkm.var,
-                           method = "nb", # this will use the randomForest::randomForest function
-                           metric = "Accuracy", # which metric should be optimized for classification
-                           # options to be passed to randomForest
+                           method = "nb",
+                           metric = "Accuracy", 
                            tuneGrid = tunegrid,
                            trControl = control)
 
@@ -131,7 +130,7 @@ NPV_train <- mean(tab_cm$byClass[,4])
 
 
 ######################################
-########## PROBAR NAIVE BAYES SOBRE VALIDATION
+########## NAIVE BAYES VALIDATION
 ######################################
 
 setwd(tablesDirectory)
