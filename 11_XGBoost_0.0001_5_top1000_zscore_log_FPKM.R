@@ -89,7 +89,7 @@ set.seed(42)
 toc <- Sys.time()
 model_xgboost <- caret::train(enfermedad_primaria ~ .,
                           data = zscore_log_fpkm.var,
-                          method = "xgbTree", # this will use the svmRadial function
+                          method = "xgbTree", 
                           metric = "Accuracy",
                           trControl = control)
 
