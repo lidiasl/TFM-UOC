@@ -1,0 +1,18 @@
+,Sensibilidad,Especificidad,PPV,NPV,Precisión,F1-score
+ adrenocortical,0.0000,1.0000,NA,0.9819,NA,NA
+ cabeza cuello,0.0000,1.0000,NA,0.9767,NA,NA
+ colon,0.0000,1.0000,NA,0.9742,NA,NA
+ esófago,0.0000,1.0000,NA,0.9561,NA,NA
+ estómago,0.0000,1.0000,NA,0.9793,NA,NA
+ hígado,0.0000,1.0000,NA,0.9922,NA,NA
+ mama,0.0000,1.0000,NA,0.7649,NA,NA
+ ovario,0.0000,1.0000,NA,0.9664,NA,NA
+ páncreas,0.0000,1.0000,NA,0.9638,NA,NA
+ piel,0.0000,1.0000,NA,0.9561,NA,NA
+ próstata,0.0000,1.0000,NA,0.7674,NA,NA
+ pulmón,0.0000,1.0000,NA,0.9457,NA,NA
+ riñón,0.0000,1.0000,NA,0.9819,NA,NA
+ sarcoma,1.0000,0.0000,0.1499,NA,0.1499,0.2607
+ testículos,0.0000,1.0000,NA,0.9897,NA,NA
+ timoma,0.0000,1.0000,NA,0.9922,NA,NA
+ vejiga,0.0000,1.0000,NA,0.9612,NA,NA
